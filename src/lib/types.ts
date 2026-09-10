@@ -33,6 +33,11 @@ export interface UserRow {
   phone: string;
   index_number: string | null;
   program_id: string | null;
+  // Only meaningful for role COURSE_REP — the one subject they're responsible
+  // for scheduling lectures in. Set by an admin promoting a student (see
+  // api.promoteToCourseRep); null for every other role and for a course rep
+  // not yet assigned one.
+  responsible_subject_id: string | null;
   is_active: boolean;
   must_reset_password: boolean;
   created_at: string;

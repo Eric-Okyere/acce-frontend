@@ -81,33 +81,57 @@ export async function createTeacherAction(_prev: FormState, fd: FormData): Promi
   }
 }
 
-export async function createCourseRepAction(_prev: FormState, fd: FormData): Promise<FormState> {
+// Course reps are no longer registered directly (see routes/users.js) —
+// instead an admin promotes an existing student, assigning them the one
+// subject they'll be responsible for. Handles both the first promotion and
+// changing an already-promoted rep's subject (same backend route either way).
+export async function promoteCourseRepAction(_prev: FormState, fd: FormData): Promise<FormState> {
   const { token } = await requireSessionWithToken(["ADMIN"]);
-  const name = str(fd, "name");
-  const phone = str(fd, "phone");
-  const programId = str(fd, "programId");
-  // Course reps attend lectures in their own program just like students do,
-  // and need their own index number on file to check in (see
-  // routes/attendance.js and routes/users.js on the backend).
-  const indexNumber = str(fd, "indexNumber");
-  if (!name || !phone || !programId || !indexNumber) {
-    return { error: "Name, phone number, program, and index number are all required." };
+  const studentId = str(fd, "studentId");
+  const subjectId = str(fd, "subjectId");
+  if (!studentId || !subjectId) {
+    return { error: "Pick the student and the subject they'll be responsible for." };
   }
 
   try {
-    const { user: rep, tempPassword } = await api.createUser(token, {
-      role: "COURSE_REP",
-      name,
-      phone,
-      programId,
-      indexNumber,
-    });
+    const { user: rep } = await api.promoteToCourseRep(token, studentId, subjectId);
     revalidatePath("/admin/course-reps");
+    revalidatePath("/admin/students");
     return {
-      success: `Course rep "${rep.name}" registered. Login phone: ${rep.phone} · Temporary password: ${tempPassword}`,
+      success: `${rep.name} is now a course rep — they can sign in with their existing password and schedule lectures for their assigned subject.`,
     };
   } catch (e) {
-    return { error: e instanceof ApiError ? e.message : "Could not register course rep." };
+    return { error: e instanceof ApiError ? e.message : "Could not promote this student to course rep." };
+  }
+}
+
+// Same backend route as above, used by the inline "reassign subject" control
+// on an existing course rep's card rather than the full promotion form.
+export async function reassignCourseRepSubjectAction(
+  userId: string,
+  subjectId: string,
+  path: string
+): Promise<{ error?: string; success?: boolean }> {
+  const { token } = await requireSessionWithToken(["ADMIN"]);
+  if (!subjectId) return { error: "Pick a subject." };
+  try {
+    await api.promoteToCourseRep(token, userId, subjectId);
+    revalidatePath(path);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not reassign this course rep's subject." };
+  }
+}
+
+export async function demoteCourseRepAction(userId: string, path: string): Promise<{ error?: string }> {
+  const { token } = await requireSessionWithToken(["ADMIN"]);
+  try {
+    await api.demoteToStudent(token, userId);
+    revalidatePath(path);
+    revalidatePath("/admin/students");
+    return {};
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not revert this course rep to a student." };
   }
 }
 

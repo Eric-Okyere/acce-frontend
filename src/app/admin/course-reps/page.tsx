@@ -1,17 +1,21 @@
 import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
-import { createCourseRepAction, toggleUserActiveAction } from "@/app/actions/admin";
-import { ActionForm } from "@/components/ActionForm";
-import { Card, PageHeader, inputClass, Badge, secondaryButtonClass } from "@/components/ui";
+import { toggleUserActiveAction } from "@/app/actions/admin";
+import { Card, PageHeader, Badge, secondaryButtonClass } from "@/components/ui";
 import ResetPasswordButton from "@/components/ResetPasswordButton";
 import ResetDeviceButton from "@/components/ResetDeviceButton";
 import SetIndexNumberButton from "@/components/SetIndexNumberButton";
+import AssignSubjectButton from "@/components/AssignSubjectButton";
+import DemoteToStudentButton from "@/components/DemoteToStudentButton";
+import PromoteCourseRepPanel from "@/components/PromoteCourseRepPanel";
 
 export default async function CourseRepsPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
-  const [reps, programs] = await Promise.all([
+  const [reps, students, programs, subjects] = await Promise.all([
     api.listUsersByRole(token, "COURSE_REP"),
+    api.listUsersByRole(token, "STUDENT"),
     api.listPrograms(token),
+    api.listSubjects(token),
   ]);
   // Course reps attend lectures in their own program just like students do
   // (see routes/attendance.js) — so, like students, their phone gets bound
@@ -19,18 +23,20 @@ export default async function CourseRepsPage() {
   const devices = await Promise.all(reps.map((r) => api.getStudentDevice(token, r.id)));
   const deviceByRep = new Map(reps.map((r, i) => [r.id, devices[i]]));
   const programName = (id: string | null) => programs.find((p) => p.id === id)?.name ?? "—";
+  const subjectName = (id: string | null) => (id ? subjects.find((s) => s.id === id)?.name ?? "—" : null);
 
   return (
     <div>
       <PageHeader
         title="Course reps"
-        subtitle="Course reps schedule upcoming lectures (subject, hall, start/end time) for their program, and — like any student — check in to attend them too."
+        subtitle="Course reps are promoted from existing student accounts and each schedule upcoming lectures for the one subject they're responsible for. Like any student, they also check in to attend lectures themselves."
       />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
           {reps.map((r) => {
             const device = deviceByRep.get(r.id);
+            const repProgramSubjects = subjects.filter((s) => s.program_id === r.program_id);
             return (
               <Card key={r.id} className="p-4">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -39,6 +45,11 @@ export default async function CourseRepsPage() {
                     <p className="text-sm text-slate-500">{r.phone}</p>
                     <div className="flex flex-wrap items-center gap-1 mt-2">
                       <Badge tone="blue">{programName(r.program_id)}</Badge>
+                      {r.responsible_subject_id ? (
+                        <Badge tone="green">Responsible for: {subjectName(r.responsible_subject_id)}</Badge>
+                      ) : (
+                        <Badge tone="amber">No subject assigned yet</Badge>
+                      )}
                       {!r.is_active && <Badge tone="red">Deactivated</Badge>}
                       {device?.device_id ? (
                         <Badge tone="green">
@@ -56,9 +67,18 @@ export default async function CourseRepsPage() {
                         path="/admin/course-reps"
                       />
                     </div>
+                    <div className="mt-2">
+                      <span className="text-xs text-slate-400 block mb-1">Assigned subject:</span>
+                      <AssignSubjectButton
+                        userId={r.id}
+                        subjects={repProgramSubjects.map((s) => ({ id: s.id, name: s.name }))}
+                        currentSubjectId={r.responsible_subject_id}
+                        path="/admin/course-reps"
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
                       <ResetPasswordButton userId={r.id} userName={r.name} userPhone={r.phone} path="/admin/course-reps" />
                       {device?.device_id && (
                         <ResetDeviceButton studentId={r.id} studentName={r.name} path="/admin/course-reps" />
@@ -68,47 +88,31 @@ export default async function CourseRepsPage() {
                           {r.is_active ? "Deactivate" : "Reactivate"}
                         </button>
                       </form>
+                      <DemoteToStudentButton userId={r.id} userName={r.name} path="/admin/course-reps" />
                     </div>
                   </div>
                 </div>
               </Card>
             );
           })}
-          {reps.length === 0 && <p className="text-sm text-slate-500">No course reps registered yet.</p>}
+          {reps.length === 0 && <p className="text-sm text-slate-500">No course reps yet — promote a student below.</p>}
         </div>
 
         <Card className="p-5 h-fit">
-          <h2 className="font-semibold text-slate-900 mb-3">Register a course rep</h2>
-          <ActionForm action={createCourseRepAction} submitLabel="Register course rep">
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Full name</label>
-                <input name="name" required className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Phone number</label>
-                <input name="phone" required type="tel" className={inputClass} placeholder="024 000 0000" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Index number</label>
-                <input name="indexNumber" required className={inputClass} placeholder="e.g. ECE/24/001" />
-                <p className="text-xs text-slate-400 mt-1">
-                  Course reps also attend and check in to lectures, so this is required — same as any student.
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Program</label>
-                <select name="programId" required className={inputClass}>
-                  <option value="">Select a program…</option>
-                  {programs.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </ActionForm>
+          <h2 className="font-semibold text-slate-900 mb-1">Promote a student to course rep</h2>
+          <p className="text-xs text-slate-500 mb-3">
+            Course reps aren&apos;t registered directly. Pick an existing student and the one subject they&apos;ll be
+            responsible for — they keep their existing password and sign in the same way.
+          </p>
+          <PromoteCourseRepPanel
+            students={students.map((s) => ({
+              id: s.id,
+              name: s.name,
+              indexNumber: s.index_number,
+              programId: s.program_id,
+            }))}
+            subjects={subjects.map((s) => ({ id: s.id, name: s.name, programId: s.program_id }))}
+          />
         </Card>
       </div>
     </div>

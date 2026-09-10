@@ -141,6 +141,22 @@ export function setUserIndexNumber(token: string, userId: string, indexNumber: s
     body: { indexNumber },
   });
 }
+// Promotes an existing student to course rep (or reassigns an existing course
+// rep) — assigns the one subject they're responsible for scheduling lectures
+// in. Course reps are no longer created directly; see routes/users.js.
+export function promoteToCourseRep(token: string, userId: string, subjectId: string) {
+  return request<{ user: UserRow }>(`/users/${userId}/promote-course-rep`, {
+    method: "PATCH",
+    token,
+    body: { subjectId },
+  });
+}
+export function demoteToStudent(token: string, userId: string) {
+  return request<{ user: UserRow }>(`/users/${userId}/demote-to-student`, {
+    method: "PATCH",
+    token,
+  });
+}
 
 // ---- Lecture halls ----
 export function listHalls(token: string) {
