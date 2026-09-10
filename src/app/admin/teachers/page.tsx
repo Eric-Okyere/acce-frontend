@@ -39,7 +39,7 @@ export default async function TeachersPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <ResetPasswordButton userId={t.id} userName={t.name} path="/admin/teachers" />
+                    <ResetPasswordButton userId={t.id} userName={t.name} userPhone={t.phone} path="/admin/teachers" />
                     <form action={toggleUserActiveAction.bind(null, t.id, !t.is_active, "/admin/teachers")}>
                       <button type="submit" className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs`}>
                         {t.is_active ? "Deactivate" : "Reactivate"}

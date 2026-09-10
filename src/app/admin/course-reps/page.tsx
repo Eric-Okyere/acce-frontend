@@ -59,7 +59,7 @@ export default async function CourseRepsPage() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <div className="flex gap-2">
-                      <ResetPasswordButton userId={r.id} userName={r.name} path="/admin/course-reps" />
+                      <ResetPasswordButton userId={r.id} userName={r.name} userPhone={r.phone} path="/admin/course-reps" />
                       {device?.device_id && (
                         <ResetDeviceButton studentId={r.id} studentName={r.name} path="/admin/course-reps" />
                       )}

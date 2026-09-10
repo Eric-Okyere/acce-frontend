@@ -2,24 +2,35 @@
 
 import { useState, useTransition } from "react";
 import { resetUserPasswordAction } from "@/app/actions/admin";
-import { secondaryButtonClass } from "@/components/ui";
+import { secondaryButtonClass, buttonClass } from "@/components/ui";
 
 // Shown inline, right on the admin page, and stays on screen (it does not
 // auto-dismiss) until the admin closes it or resets another user — this is
 // the only place the password is ever visible, since only a bcrypt hash is
-// stored server-side. Used on the Course reps, Teachers, and Students admin
-// pages wherever an admin needs to hand someone their login credentials.
+// stored server-side (there's no "always show it" option — a stored
+// password would mean every account is exposed in plain text the moment the
+// database ever leaks, not just this one credential). Used on the Course
+// reps, Teachers, and Students admin pages wherever an admin needs to hand
+// someone their login code — Copy and "Text it" below make that a single tap
+// once it's generated.
 export default function ResetPasswordButton({
   userId,
   userName,
+  userPhone,
   path,
 }: {
   userId: string;
   userName: string;
+  userPhone: string;
   path: string;
 }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ tempPassword?: string; error?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const message = result?.tempPassword
+    ? `ACCE Attendance login for ${userName} — Phone: ${userPhone} · Temporary password: ${result.tempPassword}`
+    : "";
 
   return (
     <div className="inline-block">
@@ -38,6 +49,7 @@ export default function ResetPasswordButton({
           startTransition(async () => {
             const res = await resetUserPasswordAction(userId, path);
             setResult(res);
+            setCopied(false);
           });
         }}
       >
@@ -51,9 +63,31 @@ export default function ResetPasswordButton({
             <span className="font-mono font-semibold">{result.tempPassword}</span>
           </p>
           <p className="mt-1 text-emerald-700">Share this with them now — it won&apos;t be shown again.</p>
-          <button type="button" className="mt-1 underline text-emerald-700" onClick={() => setResult(null)}>
-            Dismiss
-          </button>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <button
+              type="button"
+              className={`${buttonClass} !py-1 !px-2 !text-xs`}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(message);
+                  setCopied(true);
+                } catch {
+                  // clipboard unavailable — admin can still select the text above manually
+                }
+              }}
+            >
+              {copied ? "Copied ✓" : "Copy"}
+            </button>
+            <a
+              href={`sms:${userPhone}?body=${encodeURIComponent(message)}`}
+              className={`${secondaryButtonClass} !py-1 !px-2 !text-xs no-underline`}
+            >
+              Text it
+            </a>
+            <button type="button" className="underline text-emerald-700" onClick={() => setResult(null)}>
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
       {result?.error && (

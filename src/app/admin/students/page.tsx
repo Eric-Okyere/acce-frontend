@@ -60,7 +60,7 @@ export default async function StudentsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
-                          <ResetPasswordButton userId={s.id} userName={s.name} path="/admin/students" />
+                          <ResetPasswordButton userId={s.id} userName={s.name} userPhone={s.phone} path="/admin/students" />
                           {device?.device_id && <ResetDeviceButton studentId={s.id} studentName={s.name} />}
                           <form action={toggleUserActiveAction.bind(null, s.id, !s.is_active, "/admin/students")}>
                             <button type="submit" className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs`}>
