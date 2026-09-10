@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   resolveScanAction,
@@ -42,7 +43,23 @@ function getLocation(): Promise<GeolocationPosition> {
   });
 }
 
-export default function ScannerClient() {
+export default function ScannerClient({
+  initialToken,
+  homeHref,
+}: {
+  // Set when this component is reached via app/scan/page.tsx — the hall's QR
+  // now encodes a link (/scan?token=…) rather than raw text (see
+  // backend/src/lib/qr.js), so a person who scanned it with their phone's
+  // own default camera app lands here with the token already decoded. In
+  // that case we skip straight to resolving it — there's no reason to make
+  // them tap "Start scanning" and grant camera access a second time just to
+  // re-decode a code the OS already read for us.
+  initialToken?: string;
+  // Set on the same standalone /scan route — that page has no nav bar (it
+  // has to work for someone who arrives from outside the app entirely), so
+  // once they're done we still need a way back to their own dashboard.
+  homeHref?: string;
+}) {
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -98,6 +115,18 @@ export default function ScannerClient() {
       void stopCamera();
     };
   }, []);
+
+  const consumedInitialToken = useRef(false);
+  useEffect(() => {
+    if (initialToken && !consumedInitialToken.current) {
+      consumedInitialToken.current = true;
+      void handleToken(initialToken);
+    }
+    // handleToken is a stable function declaration on this component instance
+    // (not a prop or piece of state), and we deliberately only want this to
+    // ever fire once per mount — the ref guard above (not the dependency
+    // array) is what prevents a second run.
+  }, [initialToken]);
 
   async function handleToken(qrToken: string) {
     setToken(qrToken);
@@ -195,6 +224,11 @@ export default function ScannerClient() {
               </button>
             </div>
           </details>
+          {homeHref && (
+            <Link href={homeHref} className="text-xs text-slate-400 hover:text-blue-700 mt-4 inline-block">
+              ← Back to dashboard
+            </Link>
+          )}
         </Card>
       )}
 
@@ -233,7 +267,7 @@ export default function ScannerClient() {
                 autoComplete="off"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
               />
-              <p className="text-xs text-slate-400 mt-1">Confirms it's really you checking in — must match your account.</p>
+              <p className="text-xs text-slate-400 mt-1">Confirms it&apos;s really you checking in — must match your account.</p>
             </div>
           )}
           <div className="space-y-3">
@@ -294,6 +328,13 @@ export default function ScannerClient() {
           <button onClick={reset} className={buttonClass}>
             Scan again
           </button>
+          {homeHref && (
+            <div className="mt-4">
+              <Link href={homeHref} className="text-xs text-slate-400 hover:text-blue-700">
+                ← Back to dashboard
+              </Link>
+            </div>
+          )}
         </Card>
       )}
     </div>

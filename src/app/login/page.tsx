@@ -2,7 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import LoginForm from "./LoginForm";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  // Set by app/scan/page.tsx when someone reaches a hall's QR link without
+  // an existing session — LoginForm carries this through as a hidden field
+  // so loginAction can send them straight back to the check-in form instead
+  // of just their role's home page. See actions/auth.ts's safeNextPath for
+  // why only a same-site relative path is ever honored here.
+  const { next } = await searchParams;
+
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -19,11 +30,13 @@ export default function LoginPage() {
           />
           <h1 className="mt-4 text-xl font-semibold text-slate-900">ACCE Attendance</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Accra College of Education — sign in with your registered phone number
+            {next?.startsWith("/scan")
+              ? "Sign in to check in — you'll be taken straight back to the scan you just made."
+              : "Accra College of Education — sign in with your registered phone number"}
           </p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-          <LoginForm />
+          <LoginForm next={next} />
         </div>
         <p className="text-xs text-slate-400 text-center mt-6">
           New student?{" "}

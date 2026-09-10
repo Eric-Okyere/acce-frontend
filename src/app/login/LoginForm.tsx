@@ -6,7 +6,7 @@ import { loginAction, type LoginState } from "@/app/actions/auth";
 
 const initialState: LoginState = {};
 
-export default function LoginForm() {
+export default function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
   const router = useRouter();
 
@@ -23,6 +23,7 @@ export default function LoginForm() {
 
   return (
     <form action={formAction} className="space-y-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1">
           Phone number

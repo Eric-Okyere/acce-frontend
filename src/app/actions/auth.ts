@@ -19,9 +19,24 @@ export interface LoginState {
   redirectTo?: string;
 }
 
+// Only ever follow a `next` destination that's a same-site relative path
+// (starts with a single "/", never "//" or "/\" which browsers can treat as
+// protocol-relative and send the person off-site) — this is untrusted input
+// straight from the URL, so an open-redirect check here is what keeps a
+// crafted /login?next=https://evil.example link from being useful.
+function safeNextPath(next: string | null): string | null {
+  if (!next) return null;
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return null;
+  return next;
+}
+
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const phone = String(formData.get("phone") || "").trim();
   const password = String(formData.get("password") || "");
+  // Set by LoginForm from the page's own `next` search param — see
+  // app/scan/page.tsx, which sends someone here as /login?next=/scan?token=…
+  // when they land on a hall's QR link without an existing session.
+  const next = safeNextPath(String(formData.get("next") || "").trim() || null);
 
   if (!phone || !password) {
     return { error: "Enter your phone number and password." };
@@ -41,7 +56,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   // The backend already signed this token and recorded the LOGIN audit entry —
   // the frontend just stores it, it never signs its own session token.
   await setSessionCookie(token);
-  return { redirectTo: roleHome(role) };
+  return { redirectTo: next ?? roleHome(role) };
 }
 
 export async function logoutAction(): Promise<void> {

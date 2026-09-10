@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { promoteCourseRepAction } from "@/app/actions/admin";
-import { inputClass, buttonClass } from "@/components/ui";
+import { buttonClass } from "@/components/ui";
+import StudentSearchSelect from "@/components/StudentSearchSelect";
 
 // Promotes an existing student to course rep, assigning one or more subjects
 // they'll be responsible for — replaces the old direct "register a course
@@ -42,22 +43,14 @@ export default function PromoteCourseRepPanel({
       <div className="space-y-3">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Student</label>
-          <select
+          <StudentSearchSelect
+            students={students.map((s) => ({ id: s.id, name: s.name, indexNumber: s.indexNumber }))}
             value={studentId}
-            onChange={(e) => {
-              setStudentId(e.target.value);
+            onChange={(id) => {
+              setStudentId(id);
               setSubjectIds([]);
             }}
-            className={inputClass}
-          >
-            <option value="">Select a student…</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-                {s.indexNumber ? ` (${s.indexNumber})` : " (no index #)"}
-              </option>
-            ))}
-          </select>
+          />
           {students.length === 0 && (
             <p className="text-xs text-slate-400 mt-1">
               No students registered yet — register one from the Students page first.
