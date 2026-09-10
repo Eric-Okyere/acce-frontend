@@ -21,7 +21,18 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased bg-slate-50 text-slate-900 min-h-screen">{children}</body>
+      {/* suppressHydrationWarning: browser extensions (Grammarly, QuillBot, etc.)
+          inject attributes like data-gr-ext-installed into <body> before React
+          hydrates. That's a real DOM difference, but it's the extension's doing,
+          not a bug in this app — suppressing it here (body only, not deeper)
+          silences that specific false-positive warning without hiding a real
+          mismatch anywhere else in the tree. */}
+      <body
+        className="antialiased bg-slate-50 text-slate-900 min-h-screen"
+        suppressHydrationWarning
+      >
+        {children}
+      </body>
     </html>
   );
 }
