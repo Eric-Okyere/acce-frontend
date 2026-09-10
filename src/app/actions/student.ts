@@ -15,7 +15,9 @@ export interface ResolveScanResult {
 }
 
 export async function resolveScanAction(qrToken: string): Promise<ResolveScanResult> {
-  const { token } = await requireSessionWithToken(["STUDENT"]);
+  // STUDENT and COURSE_REP both check in to lectures the same way — see
+  // routes/attendance.js on the backend, which accepts both roles here too.
+  const { token } = await requireSessionWithToken(["STUDENT", "COURSE_REP"]);
   try {
     const result = await api.resolveScan(token, qrToken);
     return result;
@@ -38,10 +40,14 @@ export async function checkInAction(input: {
   lng: number;
   accuracy: number | null;
 }): Promise<ScanActionResult> {
-  const { token } = await requireSessionWithToken(["STUDENT"]);
+  // STUDENT and COURSE_REP both check in to lectures the same way — see
+  // routes/attendance.js on the backend, which accepts both roles here too.
+  const { token } = await requireSessionWithToken(["STUDENT", "COURSE_REP"]);
   try {
     const result = await api.checkIn(token, input);
+    // A course rep checking in also has their own /rep dashboard to refresh.
     revalidatePath("/student");
+    revalidatePath("/rep");
     return { success: result.success };
   } catch (e) {
     return { error: e instanceof ApiError ? e.message : "Something went wrong recording your check-in." };
@@ -59,10 +65,13 @@ export async function checkOutAction(input: {
   lng: number;
   accuracy: number | null;
 }): Promise<ScanActionResult> {
-  const { token } = await requireSessionWithToken(["STUDENT"]);
+  // STUDENT and COURSE_REP both check in to lectures the same way — see
+  // routes/attendance.js on the backend, which accepts both roles here too.
+  const { token } = await requireSessionWithToken(["STUDENT", "COURSE_REP"]);
   try {
     const result = await api.checkOut(token, input);
     revalidatePath("/student");
+    revalidatePath("/rep");
     return { success: result.success };
   } catch (e) {
     return { error: e instanceof ApiError ? e.message : "Something went wrong recording your check-out." };

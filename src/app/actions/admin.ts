@@ -86,16 +86,49 @@ export async function createCourseRepAction(_prev: FormState, fd: FormData): Pro
   const name = str(fd, "name");
   const phone = str(fd, "phone");
   const programId = str(fd, "programId");
-  if (!name || !phone || !programId) return { error: "Name, phone number, and program are required." };
+  // Course reps attend lectures in their own program just like students do,
+  // and need their own index number on file to check in (see
+  // routes/attendance.js and routes/users.js on the backend).
+  const indexNumber = str(fd, "indexNumber");
+  if (!name || !phone || !programId || !indexNumber) {
+    return { error: "Name, phone number, program, and index number are all required." };
+  }
 
   try {
-    const { user: rep, tempPassword } = await api.createUser(token, { role: "COURSE_REP", name, phone, programId });
+    const { user: rep, tempPassword } = await api.createUser(token, {
+      role: "COURSE_REP",
+      name,
+      phone,
+      programId,
+      indexNumber,
+    });
     revalidatePath("/admin/course-reps");
     return {
       success: `Course rep "${rep.name}" registered. Login phone: ${rep.phone} · Temporary password: ${tempPassword}`,
     };
   } catch (e) {
     return { error: e instanceof ApiError ? e.message : "Could not register course rep." };
+  }
+}
+
+// Backfills/corrects the index number on an already-registered user — mainly
+// for course reps that existed before index numbers were required for that
+// role, so they can be brought up to the point where they can check in
+// without re-creating their account.
+export async function setIndexNumberAction(
+  userId: string,
+  indexNumber: string,
+  path: string
+): Promise<{ error?: string; success?: boolean }> {
+  const { token } = await requireSessionWithToken(["ADMIN"]);
+  const trimmed = indexNumber.trim();
+  if (!trimmed) return { error: "Enter an index number." };
+  try {
+    await api.setUserIndexNumber(token, userId, trimmed);
+    revalidatePath(path);
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not save the index number." };
   }
 }
 
@@ -183,8 +216,29 @@ export async function toggleUserActiveAction(userId: string, isActive: boolean, 
   revalidatePath(path);
 }
 
-export async function resetDeviceAction(studentId: string): Promise<void> {
+// path defaults to /admin/students for backwards compatibility with existing
+// callers; the course-reps admin page (whose reps now also have a device
+// binding, since they check in the same way a student does) passes its own.
+export async function resetDeviceAction(studentId: string, path: string = "/admin/students"): Promise<void> {
   const { token } = await requireSessionWithToken(["ADMIN"]);
   await api.resetDevice(token, studentId);
-  revalidatePath("/admin/students");
+  revalidatePath(path);
+}
+
+// Issues a fresh temporary password for a teacher / course rep / student and
+// hands it straight back to the admin UI to display — see the comment on the
+// backend route (routes/users.js, PATCH /:id/reset-password) for why this
+// always issues a new one rather than revealing the original.
+export async function resetUserPasswordAction(
+  userId: string,
+  path: string
+): Promise<{ tempPassword?: string; error?: string }> {
+  const { token } = await requireSessionWithToken(["ADMIN"]);
+  try {
+    const { tempPassword } = await api.resetUserPassword(token, userId);
+    revalidatePath(path);
+    return { tempPassword };
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not reset the password." };
+  }
 }

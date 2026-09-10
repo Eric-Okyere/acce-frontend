@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 const NAV_ITEMS = [
   { href: "/rep", label: "Lectures" },
   { href: "/rep/lectures/new", label: "Schedule lecture" },
+  { href: "/rep/scan", label: "Scan to check in / out" },
 ];
 
 export default async function RepLayout({ children }: { children: React.ReactNode }) {

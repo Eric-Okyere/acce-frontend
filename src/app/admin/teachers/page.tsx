@@ -3,6 +3,7 @@ import * as api from "@/lib/api";
 import { createTeacherAction, toggleUserActiveAction } from "@/app/actions/admin";
 import { ActionForm } from "@/components/ActionForm";
 import { Card, PageHeader, inputClass, Badge, secondaryButtonClass } from "@/components/ui";
+import ResetPasswordButton from "@/components/ResetPasswordButton";
 
 export default async function TeachersPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
@@ -37,11 +38,14 @@ export default async function TeachersPage() {
                       {!t.is_active && <Badge tone="red">Deactivated</Badge>}
                     </div>
                   </div>
-                  <form action={toggleUserActiveAction.bind(null, t.id, !t.is_active, "/admin/teachers")}>
-                    <button type="submit" className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs`}>
-                      {t.is_active ? "Deactivate" : "Reactivate"}
-                    </button>
-                  </form>
+                  <div className="flex gap-2">
+                    <ResetPasswordButton userId={t.id} userName={t.name} path="/admin/teachers" />
+                    <form action={toggleUserActiveAction.bind(null, t.id, !t.is_active, "/admin/teachers")}>
+                      <button type="submit" className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs`}>
+                        {t.is_active ? "Deactivate" : "Reactivate"}
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </Card>
             );

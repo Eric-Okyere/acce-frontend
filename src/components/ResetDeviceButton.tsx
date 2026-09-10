@@ -4,7 +4,18 @@ import { useTransition } from "react";
 import { resetDeviceAction } from "@/app/actions/admin";
 import { secondaryButtonClass } from "@/components/ui";
 
-export default function ResetDeviceButton({ studentId, studentName }: { studentId: string; studentName: string }) {
+// Shared between the Students and Course reps admin pages — a course rep's
+// device binds and can need resetting the exact same way a student's does,
+// since they check in the same way (see routes/attendance.js).
+export default function ResetDeviceButton({
+  studentId,
+  studentName,
+  path = "/admin/students",
+}: {
+  studentId: string;
+  studentName: string;
+  path?: string;
+}) {
   const [pending, startTransition] = useTransition();
 
   return (
@@ -20,7 +31,7 @@ export default function ResetDeviceButton({ studentId, studentName }: { studentI
         ) {
           return;
         }
-        startTransition(() => resetDeviceAction(studentId));
+        startTransition(() => resetDeviceAction(studentId, path));
       }}
     >
       {pending ? "Resetting…" : "Reset device"}

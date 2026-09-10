@@ -3,7 +3,8 @@ import * as api from "@/lib/api";
 import { createStudentAction, toggleUserActiveAction } from "@/app/actions/admin";
 import { ActionForm } from "@/components/ActionForm";
 import { Card, PageHeader, inputClass, Badge, secondaryButtonClass } from "@/components/ui";
-import ResetDeviceButton from "./ResetDeviceButton";
+import ResetDeviceButton from "@/components/ResetDeviceButton";
+import ResetPasswordButton from "@/components/ResetPasswordButton";
 
 export default async function StudentsPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
@@ -59,6 +60,7 @@ export default async function StudentsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
+                          <ResetPasswordButton userId={s.id} userName={s.name} path="/admin/students" />
                           {device?.device_id && <ResetDeviceButton studentId={s.id} studentName={s.name} />}
                           <form action={toggleUserActiveAction.bind(null, s.id, !s.is_active, "/admin/students")}>
                             <button type="submit" className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs`}>

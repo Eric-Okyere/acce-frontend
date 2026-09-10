@@ -128,6 +128,19 @@ export function createUser(
 export function setUserActive(token: string, userId: string, isActive: boolean) {
   return request<UserRow>(`/users/${userId}/active`, { method: "PATCH", token, body: { isActive } });
 }
+export function resetUserPassword(token: string, userId: string) {
+  return request<{ user: UserRow; tempPassword: string }>(`/users/${userId}/reset-password`, {
+    method: "PATCH",
+    token,
+  });
+}
+export function setUserIndexNumber(token: string, userId: string, indexNumber: string) {
+  return request<{ user: UserRow }>(`/users/${userId}/index-number`, {
+    method: "PATCH",
+    token,
+    body: { indexNumber },
+  });
+}
 
 // ---- Lecture halls ----
 export function listHalls(token: string) {
