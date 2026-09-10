@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { logoutAction } from "@/app/actions/auth";
 
@@ -20,9 +21,19 @@ export default function Nav({
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-blue-700 text-white flex items-center justify-center font-bold text-xs">
-              ACE
-            </div>
+            {/* Filename is versioned (…-v3) so a browser/CDN that already cached
+                an old logo under a previous filename can never serve that
+                stale image here — this path has never existed before, so the
+                request is guaranteed to hit the new file. Bump the suffix
+                again on any future crest change. */}
+            <Image
+              src="/brand/acce-crest-v3.png"
+              alt="Accra College of Education crest"
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-lg shadow-sm"
+              priority
+            />
             <span className="font-semibold text-sm text-slate-900 hidden sm:inline">
               ACCE Attendance
             </span>

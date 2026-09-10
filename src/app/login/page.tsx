@@ -1,3 +1,4 @@
+import Image from "next/image";
 import LoginForm from "./LoginForm";
 
 export default function LoginPage() {
@@ -5,9 +6,16 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 rounded-xl bg-blue-700 text-white flex items-center justify-center font-bold text-lg">
-            ACE
-          </div>
+          {/* Versioned filename (…-v3) — guarantees this URL was never served
+              by an old build, so no cache anywhere can show a stale logo. */}
+          <Image
+            src="/brand/acce-crest-v3.png"
+            alt="Accra College of Education crest"
+            width={96}
+            height={96}
+            className="mx-auto h-24 w-24 rounded-2xl shadow-sm"
+            priority
+          />
           <h1 className="mt-4 text-xl font-semibold text-slate-900">ACCE Attendance</h1>
           <p className="text-sm text-slate-500 mt-1">
             Accra College of Education — sign in with your registered phone number
