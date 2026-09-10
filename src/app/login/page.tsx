@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import LoginForm from "./LoginForm";
 
 export default function LoginPage() {
@@ -25,6 +26,12 @@ export default function LoginPage() {
           <LoginForm />
         </div>
         <p className="text-xs text-slate-400 text-center mt-6">
+          New student?{" "}
+          <Link href="/register" className="text-blue-700 hover:underline">
+            Create an account
+          </Link>
+        </p>
+        <p className="text-xs text-slate-400 text-center mt-2">
           Lost access to your account, or new phone as a student? Ask your admin.
         </p>
       </div>

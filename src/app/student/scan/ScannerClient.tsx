@@ -51,6 +51,7 @@ export default function ScannerClient() {
   const [token, setToken] = useState<string | null>(null);
   const [manualToken, setManualToken] = useState("");
   const [locating, setLocating] = useState(false);
+  const [indexNumber, setIndexNumber] = useState("");
 
   const readerRef = useRef<HTMLDivElement>(null);
   const scannerRef = useRef<import("html5-qrcode").Html5Qrcode | null>(null);
@@ -116,6 +117,10 @@ export default function ScannerClient() {
 
   async function handleAction(candidate: ScanCandidate, kind: "in" | "out") {
     if (!token) return;
+    if (kind === "in" && !indexNumber.trim()) {
+      setError("Enter your index number to check in.");
+      return;
+    }
     setStage("submitting");
     setError(null);
     setLocating(true);
@@ -126,6 +131,7 @@ export default function ScannerClient() {
         lectureId: candidate.lectureId,
         qrToken: token,
         deviceId: getOrCreateDeviceId(),
+        indexNumber: kind === "in" ? indexNumber.trim() : "",
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
         accuracy: pos.coords.accuracy ?? null,
@@ -157,6 +163,7 @@ export default function ScannerClient() {
     setCandidates([]);
     setToken(null);
     setManualToken("");
+    setIndexNumber("");
   }
 
   return (
@@ -213,6 +220,22 @@ export default function ScannerClient() {
             </p>
           )}
           {locating && <p className="text-sm text-slate-500 mb-3">Getting your location…</p>}
+          {candidates.some((c) => !c.checkedIn) && (
+            <div className="mb-4">
+              <label htmlFor="scanIndexNumber" className="block text-sm font-medium text-slate-700 mb-1">
+                Your index number
+              </label>
+              <input
+                id="scanIndexNumber"
+                value={indexNumber}
+                onChange={(e) => setIndexNumber(e.target.value)}
+                placeholder="e.g. ECE/24/001"
+                autoComplete="off"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              />
+              <p className="text-xs text-slate-400 mt-1">Confirms it's really you checking in — must match your account.</p>
+            </div>
+          )}
           <div className="space-y-3">
             {candidates.map((c) => (
               <div key={c.lectureId} className="border border-slate-200 rounded-xl p-3">
@@ -232,7 +255,7 @@ export default function ScannerClient() {
                 <div className="mt-3 flex gap-2">
                   {!c.checkedIn && (
                     <button
-                      disabled={stage === "submitting"}
+                      disabled={stage === "submitting" || !indexNumber.trim()}
                       onClick={() => handleAction(c, "in")}
                       className={`${buttonClass} flex-1`}
                     >

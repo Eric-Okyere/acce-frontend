@@ -33,6 +33,7 @@ export async function checkInAction(input: {
   lectureId: string;
   qrToken: string;
   deviceId: string;
+  indexNumber: string;
   lat: number;
   lng: number;
   accuracy: number | null;
@@ -51,6 +52,9 @@ export async function checkOutAction(input: {
   lectureId: string;
   qrToken: string;
   deviceId: string;
+  // Not required/checked for check-out — kept in the shape only because
+  // ScanInput is shared with check-in. Always pass "" here.
+  indexNumber: string;
   lat: number;
   lng: number;
   accuracy: number | null;

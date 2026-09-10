@@ -65,8 +65,26 @@ export function changePassword(
 ) {
   return request<{ success: true }>("/auth/change-password", { method: "POST", token, body: input });
 }
+// Public student self-registration — no token, since the person doesn't have
+// an account yet. Returns a token immediately (same shape as login) so the
+// caller can sign them straight in without a separate login step.
+export function registerStudent(input: {
+  name: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  programId: string;
+  indexNumber: string;
+}) {
+  return request<{ token: string; user: UserRow }>("/auth/register-student", { method: "POST", body: input });
+}
 
 // ---- Programs ----
+// Public, unauthenticated — used by the student self-registration page, which
+// runs before the person has any token. Deliberately minimal (id + name).
+export function listProgramsPublic() {
+  return request<{ id: string; name: string }[]>("/programs/public");
+}
 export function listPrograms(token: string) {
   return request<ProgramRow[]>("/programs", { token });
 }
@@ -174,6 +192,10 @@ export interface ScanInput {
   lectureId: string;
   qrToken: string;
   deviceId: string;
+  // Required by the backend on check-in only (ignored on check-out) — the
+  // student re-types their own index number as an extra "prove it's you"
+  // step. See routes/attendance.js on the backend.
+  indexNumber: string;
   lat: number;
   lng: number;
   accuracy: number | null;

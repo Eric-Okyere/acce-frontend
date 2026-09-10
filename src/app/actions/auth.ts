@@ -48,3 +48,42 @@ export async function logoutAction(): Promise<void> {
   await clearSessionCookie();
   redirect("/login");
 }
+
+export interface RegisterState {
+  error?: string;
+  // Same reasoning as LoginState.redirectTo above — see the comment there.
+  redirectTo?: string;
+}
+
+export async function registerStudentAction(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
+  const name = String(formData.get("name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  const password = String(formData.get("password") || "");
+  const confirmPassword = String(formData.get("confirmPassword") || "");
+  const programId = String(formData.get("programId") || "").trim();
+  const indexNumber = String(formData.get("indexNumber") || "").trim();
+
+  if (!name || !phone || !password || !programId || !indexNumber) {
+    return { error: "Fill in your name, phone number, password, program, and index number." };
+  }
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+  if (password !== confirmPassword) {
+    return { error: "Passwords don't match." };
+  }
+
+  let token: string;
+  let role;
+  try {
+    const result = await api.registerStudent({ name, phone, password, confirmPassword, programId, indexNumber });
+    token = result.token;
+    role = result.user.role;
+  } catch (e) {
+    if (e instanceof ApiError) return { error: e.message };
+    return { error: "Couldn't reach the server. Please try again." };
+  }
+
+  await setSessionCookie(token);
+  return { redirectTo: roleHome(role) };
+}
