@@ -23,13 +23,13 @@ export default async function CourseRepsPage() {
   const devices = await Promise.all(reps.map((r) => api.getStudentDevice(token, r.id)));
   const deviceByRep = new Map(reps.map((r, i) => [r.id, devices[i]]));
   const programName = (id: string | null) => programs.find((p) => p.id === id)?.name ?? "—";
-  const subjectName = (id: string | null) => (id ? subjects.find((s) => s.id === id)?.name ?? "—" : null);
+  const subjectName = (id: string) => subjects.find((s) => s.id === id)?.name ?? "—";
 
   return (
     <div>
       <PageHeader
         title="Course reps"
-        subtitle="Course reps are promoted from existing student accounts and each schedule upcoming lectures for the one subject they're responsible for. Like any student, they also check in to attend lectures themselves."
+        subtitle="Course reps are promoted from existing student accounts and each schedule upcoming lectures for the subject(s) they're responsible for. Like any student, they also check in to attend lectures themselves."
       />
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -45,8 +45,12 @@ export default async function CourseRepsPage() {
                     <p className="text-sm text-slate-500">{r.phone}</p>
                     <div className="flex flex-wrap items-center gap-1 mt-2">
                       <Badge tone="blue">{programName(r.program_id)}</Badge>
-                      {r.responsible_subject_id ? (
-                        <Badge tone="green">Responsible for: {subjectName(r.responsible_subject_id)}</Badge>
+                      {r.responsible_subject_ids.length > 0 ? (
+                        r.responsible_subject_ids.map((id) => (
+                          <Badge key={id} tone="green">
+                            {subjectName(id)}
+                          </Badge>
+                        ))
                       ) : (
                         <Badge tone="amber">No subject assigned yet</Badge>
                       )}
@@ -68,11 +72,11 @@ export default async function CourseRepsPage() {
                       />
                     </div>
                     <div className="mt-2">
-                      <span className="text-xs text-slate-400 block mb-1">Assigned subject:</span>
+                      <span className="text-xs text-slate-400 block mb-1">Assigned subject(s):</span>
                       <AssignSubjectButton
                         userId={r.id}
                         subjects={repProgramSubjects.map((s) => ({ id: s.id, name: s.name }))}
-                        currentSubjectId={r.responsible_subject_id}
+                        currentSubjectIds={r.responsible_subject_ids}
                         path="/admin/course-reps"
                       />
                     </div>
@@ -101,7 +105,7 @@ export default async function CourseRepsPage() {
         <Card className="p-5 h-fit">
           <h2 className="font-semibold text-slate-900 mb-1">Promote a student to course rep</h2>
           <p className="text-xs text-slate-500 mb-3">
-            Course reps aren&apos;t registered directly. Pick an existing student and the one subject they&apos;ll be
+            Course reps aren&apos;t registered directly. Pick an existing student and the subject(s) they&apos;ll be
             responsible for — they keep their existing password and sign in the same way.
           </p>
           <PromoteCourseRepPanel

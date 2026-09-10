@@ -4,13 +4,14 @@ import { useMemo, useState, useTransition } from "react";
 import { promoteCourseRepAction } from "@/app/actions/admin";
 import { inputClass, buttonClass } from "@/components/ui";
 
-// Promotes an existing student to course rep, assigning the one subject
+// Promotes an existing student to course rep, assigning one or more subjects
 // they'll be responsible for — replaces the old direct "register a course
 // rep" form (see routes/users.js: course reps are no longer created
-// directly). The subject list is scoped to whichever student is currently
-// selected, since a rep can only be assigned a subject from their own
-// program. Driven manually (rather than via ActionForm/useActionState) so a
-// successful submit can reset both the student and subject selects at once
+// directly). A course rep can be responsible for more than one course, so
+// the subject list is a checkbox group, scoped to whichever student is
+// currently selected (a rep can only be assigned subjects from their own
+// program). Driven manually (rather than via ActionForm/useActionState) so a
+// successful submit can reset the student and subject selections at once
 // without syncing state through an effect.
 export default function PromoteCourseRepPanel({
   students,
@@ -20,7 +21,7 @@ export default function PromoteCourseRepPanel({
   subjects: { id: string; name: string; programId: string }[];
 }) {
   const [studentId, setStudentId] = useState("");
-  const [subjectId, setSubjectId] = useState("");
+  const [subjectIds, setSubjectIds] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ error?: string; success?: string }>({});
 
@@ -29,6 +30,12 @@ export default function PromoteCourseRepPanel({
     () => (selectedStudent ? subjects.filter((sub) => sub.programId === selectedStudent.programId) : []),
     [selectedStudent, subjects]
   );
+
+  function toggleSubject(subjectId: string) {
+    setSubjectIds((prev) =>
+      prev.includes(subjectId) ? prev.filter((id) => id !== subjectId) : [...prev, subjectId]
+    );
+  }
 
   return (
     <div>
@@ -39,7 +46,7 @@ export default function PromoteCourseRepPanel({
             value={studentId}
             onChange={(e) => {
               setStudentId(e.target.value);
-              setSubjectId("");
+              setSubjectIds([]);
             }}
             className={inputClass}
           >
@@ -58,24 +65,27 @@ export default function PromoteCourseRepPanel({
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Responsible subject</label>
-          <select
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
-            disabled={!selectedStudent}
-            className={inputClass}
-          >
-            <option value="">{selectedStudent ? "Select a subject…" : "Pick a student first…"}</option>
-            {availableSubjects.map((sub) => (
-              <option key={sub.id} value={sub.id}>
-                {sub.name}
-              </option>
-            ))}
-          </select>
-          {selectedStudent && availableSubjects.length === 0 && (
-            <p className="text-xs text-amber-700 mt-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Responsible subject(s)</label>
+          {!selectedStudent ? (
+            <p className="text-xs text-slate-400">Pick a student first…</p>
+          ) : availableSubjects.length === 0 ? (
+            <p className="text-xs text-amber-700">
               No subjects exist for this student&apos;s program yet — create one on the Subjects page first.
             </p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {availableSubjects.map((sub) => (
+                <label key={sub.id} className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={subjectIds.includes(sub.id)}
+                    onChange={() => toggleSubject(sub.id)}
+                    className="rounded border-slate-300"
+                  />
+                  {sub.name}
+                </label>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -91,19 +101,19 @@ export default function PromoteCourseRepPanel({
       )}
       <button
         type="button"
-        disabled={pending || !studentId || !subjectId}
+        disabled={pending || !studentId || subjectIds.length === 0}
         className={`${buttonClass} mt-3`}
         onClick={() => {
           setResult({});
           startTransition(async () => {
             const fd = new FormData();
             fd.set("studentId", studentId);
-            fd.set("subjectId", subjectId);
+            subjectIds.forEach((id) => fd.append("subjectIds", id));
             const res = await promoteCourseRepAction({}, fd);
             setResult(res);
             if (res.success) {
               setStudentId("");
-              setSubjectId("");
+              setSubjectIds([]);
             }
           });
         }}

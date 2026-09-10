@@ -7,42 +7,54 @@ import { Card, PageHeader, inputClass } from "@/components/ui";
 export default async function NewLecturePage() {
   const { token } = await requireSessionWithToken(["COURSE_REP"]);
   const rep = await api.getMe(token);
-  // Every course rep is responsible for exactly one subject, assigned by an
+  // A course rep is responsible for one or more subjects, assigned by an
   // admin (see routes/users.js's promote-course-rep route) — they can only
-  // ever schedule lectures for that subject, so there's no subject picker
-  // here, just a read-only display plus a hidden field for the form post.
-  // The backend enforces this too (routes/lectures.js), so this is a UX
-  // convenience, not the actual security boundary.
-  const [subjects, halls] = await Promise.all([
-    rep.responsible_subject_id ? api.listSubjects(token) : Promise.resolve([]),
+  // ever schedule lectures for one of those, so the picker below (when there
+  // is more than one) is restricted to just their own assigned subjects,
+  // never every subject in their program. The backend enforces this too
+  // (routes/lectures.js), so this is a UX convenience, not the actual
+  // security boundary.
+  const [allSubjects, halls] = await Promise.all([
+    rep.responsible_subject_ids.length > 0 ? api.listSubjects(token) : Promise.resolve([]),
     api.listHalls(token),
   ]);
-  const responsibleSubject = rep.responsible_subject_id
-    ? subjects.find((s) => s.id === rep.responsible_subject_id) ?? null
-    : null;
+  const responsibleSubjects = allSubjects.filter((s) => rep.responsible_subject_ids.includes(s.id));
 
   return (
     <div className="max-w-lg">
       <PageHeader title="Schedule a lecture" subtitle="Students can check in from up to 2 hours before start, and must check out right at the end time." />
 
       <Card className="p-5">
-        {!rep.responsible_subject_id ? (
+        {rep.responsible_subject_ids.length === 0 ? (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
             You haven&apos;t been assigned a subject yet — ask an admin to assign you one before you can schedule
             lectures.
           </p>
-        ) : !responsibleSubject ? (
+        ) : responsibleSubjects.length === 0 ? (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Your assigned subject could not be found — ask an admin to check your subject assignment.
+            Your assigned subject(s) could not be found — ask an admin to check your subject assignment.
           </p>
         ) : (
           <ActionForm action={createLectureAction} submitLabel="Schedule lecture">
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
-                <input type="hidden" name="subjectId" value={responsibleSubject.id} />
-                <p className={`${inputClass} bg-slate-50 text-slate-700`}>{responsibleSubject.name}</p>
-                <p className="text-xs text-slate-400 mt-1">You can only schedule lectures for your assigned subject.</p>
+                {responsibleSubjects.length === 1 ? (
+                  <>
+                    <input type="hidden" name="subjectId" value={responsibleSubjects[0].id} />
+                    <p className={`${inputClass} bg-slate-50 text-slate-700`}>{responsibleSubjects[0].name}</p>
+                  </>
+                ) : (
+                  <select name="subjectId" required className={inputClass}>
+                    <option value="">Select a subject…</option>
+                    {responsibleSubjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-xs text-slate-400 mt-1">You can only schedule lectures for a subject you&apos;re responsible for.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Lecture hall</label>
