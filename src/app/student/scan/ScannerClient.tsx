@@ -125,10 +125,45 @@ export default function ScannerClient({
     // handleToken is a stable function declaration on this component instance
     // (not a prop or piece of state), and we deliberately only want this to
     // ever fire once per mount — the ref guard above (not the dependency
-    // array) is what prevents a second run.
+    // array) is what prevents a second run. (The linter now flags handleToken
+    // as missing from deps because it's grown a closure — listing it would
+    // just make it redefine every render without changing this effect's
+    // actual behavior, since the ref guard is what's doing the real work.)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialToken]);
 
-  async function handleToken(qrToken: string) {
+  // The QR image itself now encodes a full link (see backend/src/lib/qr.js,
+  // v3.15) — https://.../scan?token=<the actual signed token> — rather than
+  // just the bare token text. The standalone /scan route (app/scan/page.tsx)
+  // already extracts `token` from the URL before this component ever sees
+  // it, but THIS component's own in-app camera (startCamera's html5-qrcode
+  // callback, below) decodes whatever raw text is in the QR image and hands
+  // it straight to handleToken — which is now the full link, not a bare
+  // token. Sending a full URL to the backend as "the token" always failed
+  // signature verification (a URL has multiple "."s, so it doesn't even
+  // split into the two parts a signed token has), regardless of whether the
+  // QR itself was valid. This normalizes either shape — a bare token (the
+  // manual-paste fallback below, or an old-style QR) or a full scan link —
+  // down to just the token before it's ever sent to the backend.
+  function extractQrToken(raw: string): string {
+    const trimmed = raw.trim();
+    if (/^https?:\/\//i.test(trimmed)) {
+      try {
+        const url = new URL(trimmed);
+        const fromQuery = url.searchParams.get("token");
+        if (fromQuery)
+          return fromQuery;
+      } catch {
+        // Not a parseable URL despite looking like one — fall through and
+        // treat it as a raw token; the backend will reject it clearly if
+        // it's genuinely invalid rather than this silently mis-normalizing it.
+      }
+    }
+    return trimmed;
+  }
+
+  async function handleToken(rawToken: string) {
+    const qrToken = extractQrToken(rawToken);
     setToken(qrToken);
     setStage("resolving");
     setError(null);
