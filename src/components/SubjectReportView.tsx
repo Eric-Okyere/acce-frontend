@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -17,9 +18,48 @@ import { Card, StatTile, Badge } from "@/components/ui";
 import { AT_RISK_THRESHOLD } from "@/lib/constants";
 
 const COLORS = { present: "#059669", incomplete: "#d97706", absent: "#dc2626" };
+const SERIES: { key: "Present" | "Incomplete" | "Absent"; color: string }[] = [
+  { key: "Present", color: COLORS.present },
+  { key: "Incomplete", color: COLORS.incomplete },
+  { key: "Absent", color: COLORS.absent },
+];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// One tooltip listing every series at that point, value leading (bold,
+// high-contrast) with the series name secondary, and a short line/swatch
+// keying each row to its series color rather than a full filled box.
+function ChartTooltip({
+  active,
+  label,
+  payload,
+  unit,
+}: {
+  active?: boolean;
+  label?: string;
+  payload?: { name?: string; value?: number | string; color?: string }[];
+  unit?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md text-xs">
+      <div className="font-medium text-slate-500 mb-1">{label}</div>
+      <div className="space-y-1">
+        {payload.map((entry) => (
+          <div key={entry.name} className="flex items-center gap-2">
+            <span className="inline-block w-2.5 h-0.5 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span className="font-semibold text-slate-900 tabular-nums">
+              {entry.value}
+              {unit ?? ""}
+            </span>
+            <span className="text-slate-500">{entry.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function SubjectReportView({ report }: { report: SubjectReport }) {
@@ -34,6 +74,19 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
     Incomplete: l.incomplete,
     Absent: l.absent,
   }));
+
+  // Click a legend entry to toggle that series off/on in the stacked bar —
+  // the bar itself is only omitted from the JSX (not just visually hidden),
+  // so the remaining series restack correctly rather than leaving a gap.
+  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set());
+  function toggleSeries(key: string) {
+    setHiddenSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   const atRisk = report.studentStats.filter((s) => s.rate < AT_RISK_THRESHOLD && s.totalLectures > 0);
 
@@ -54,29 +107,81 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
         <div className="grid lg:grid-cols-2 gap-6">
           <Card className="p-5">
             <h3 className="font-semibold text-slate-900 mb-4">Attendance rate over time</h3>
+            {/* syncId ties this chart's crosshair/tooltip to the breakdown
+                chart below — both plot the same lecture dates, so hovering
+                either one highlights the matching point on both. */}
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={trendData} margin={{ left: -20 }}>
+              <LineChart data={trendData} margin={{ left: -20 }} syncId="subject-attendance">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#94a3b8" />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} stroke="#94a3b8" unit="%" />
-                <Tooltip formatter={(v) => [`${v}%`, "Present"]} />
-                <Line type="monotone" dataKey="rate" stroke="#1d4ed8" strokeWidth={2.5} dot={{ r: 4 }} />
+                <Tooltip content={<ChartTooltip unit="%" />} />
+                <Line
+                  type="monotone"
+                  dataKey="rate"
+                  name="Attendance rate"
+                  stroke="#1d4ed8"
+                  strokeWidth={2.5}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </Card>
 
           <Card className="p-5">
-            <h3 className="font-semibold text-slate-900 mb-4">Per-lecture breakdown</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900">Per-lecture breakdown</h3>
+              <span className="text-xs text-slate-400">Click a series below to toggle it</span>
+            </div>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={breakdownData} margin={{ left: -20 }}>
+              <BarChart data={breakdownData} margin={{ left: -20 }} syncId="subject-attendance">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#94a3b8" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" allowDecimals={false} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="Present" stackId="a" fill={COLORS.present} radius={[0, 0, 0, 0]} />
-                <Bar dataKey="Incomplete" stackId="a" fill={COLORS.incomplete} />
-                <Bar dataKey="Absent" stackId="a" fill={COLORS.absent} radius={[4, 4, 0, 0]} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: "#f1f5f9" }} />
+                {/* A fully custom legend rather than Recharts' built-in one:
+                    its default legend auto-derives its entries from whichever
+                    <Bar> children are actually mounted below — so a
+                    toggled-off series would disappear from the legend
+                    entirely instead of showing struck-through, leaving no way
+                    to click it back on. Real <button>s here also give this
+                    proper keyboard focus, which the built-in legend's onClick
+                    doesn't. */}
+                <Legend
+                  content={() => (
+                    <div className="flex items-center justify-center gap-4 mt-2">
+                      {SERIES.map((s) => {
+                        const hidden = hiddenSeries.has(s.key);
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => toggleSeries(s.key)}
+                            aria-pressed={!hidden}
+                            className="flex items-center gap-1.5 text-xs cursor-pointer"
+                          >
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-sm"
+                              style={{ backgroundColor: hidden ? "#cbd5e1" : s.color }}
+                            />
+                            <span className={hidden ? "text-slate-300 line-through" : "text-slate-600"}>{s.key}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+                {SERIES.filter((s) => !hiddenSeries.has(s.key)).map((s, i, visible) => (
+                  <Bar
+                    key={s.key}
+                    dataKey={s.key}
+                    stackId="a"
+                    fill={s.color}
+                    radius={i === visible.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    activeBar={{ stroke: "#1e293b", strokeWidth: 1.5 }}
+                  />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </Card>
