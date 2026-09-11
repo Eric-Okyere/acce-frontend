@@ -20,8 +20,21 @@ export default async function HallsPage() {
         subtitle="Each hall gets a unique, signed QR code embedding its coordinates. Print it and post it in the hall — students must be physically inside the geofence to scan it successfully."
       />
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
+      <div className="space-y-6">
+        <Card className="p-5">
+          <h2 className="font-semibold text-slate-900 mb-3">Add a lecture hall</h2>
+          <ActionForm action={createHallAction} submitLabel="Create hall">
+            <div className="max-w-md space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Hall name</label>
+                <input name="name" required className={inputClass} placeholder="e.g. Block A — Room 101" />
+              </div>
+              <HallLocationFields />
+            </div>
+          </ActionForm>
+        </Card>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {withQr.map(({ hall, qr }) => (
             <Card key={hall.id} className="p-4">
               <div className="flex items-start justify-between gap-2">
@@ -52,19 +65,6 @@ export default async function HallsPage() {
           ))}
           {halls.length === 0 && <p className="text-sm text-slate-500">No lecture halls yet.</p>}
         </div>
-
-        <Card className="p-5 h-fit">
-          <h2 className="font-semibold text-slate-900 mb-3">Add a lecture hall</h2>
-          <ActionForm action={createHallAction} submitLabel="Create hall">
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Hall name</label>
-                <input name="name" required className={inputClass} placeholder="e.g. Block A — Room 101" />
-              </div>
-              <HallLocationFields />
-            </div>
-          </ActionForm>
-        </Card>
       </div>
     </div>
   );

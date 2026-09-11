@@ -77,6 +77,7 @@ export async function registerStudentAction(_prev: RegisterState, formData: Form
   const confirmPassword = String(formData.get("confirmPassword") || "");
   const programId = String(formData.get("programId") || "").trim();
   const indexNumber = String(formData.get("indexNumber") || "").trim();
+  const subjectIds = formData.getAll("subjectIds").map(String).filter(Boolean);
 
   if (!name || !phone || !password || !programId || !indexNumber) {
     return { error: "Fill in your name, phone number, password, program, and index number." };
@@ -87,11 +88,22 @@ export async function registerStudentAction(_prev: RegisterState, formData: Form
   if (password !== confirmPassword) {
     return { error: "Passwords don't match." };
   }
+  if (subjectIds.length === 0) {
+    return { error: "Choose at least one course you're offering." };
+  }
 
   let token: string;
   let role;
   try {
-    const result = await api.registerStudent({ name, phone, password, confirmPassword, programId, indexNumber });
+    const result = await api.registerStudent({
+      name,
+      phone,
+      password,
+      confirmPassword,
+      programId,
+      indexNumber,
+      subjectIds,
+    });
     token = result.token;
     role = result.user.role;
   } catch (e) {

@@ -163,6 +163,7 @@ export async function createStudentAction(_prev: FormState, fd: FormData): Promi
   const phone = str(fd, "phone");
   const indexNumber = str(fd, "indexNumber");
   const programId = str(fd, "programId");
+  const subjectIds = fd.getAll("subjectIds").map(String).filter(Boolean);
   if (!name || !phone || !programId) return { error: "Name, phone number, and program are required." };
 
   try {
@@ -172,6 +173,7 @@ export async function createStudentAction(_prev: FormState, fd: FormData): Promi
       phone,
       programId,
       indexNumber: indexNumber || undefined,
+      subjectIds,
     });
     revalidatePath("/admin/students");
     return {
@@ -181,6 +183,50 @@ export async function createStudentAction(_prev: FormState, fd: FormData): Promi
     return {
       error: e instanceof ApiError ? e.message : "Could not register student (index number may already be in use).",
     };
+  }
+}
+
+// Full edit for an existing student — name, phone, index number, program,
+// and which courses they're offering. Used by EditStudentButton's inline
+// form on the Students page. subjectIds is always sent (even empty),
+// mirroring reassignCourseRepSubjectsAction's full-replacement behavior —
+// see the backend route's comment (routes/users.js) for why an empty list
+// is meaningful rather than "leave unchanged".
+export async function updateStudentAction(
+  userId: string,
+  input: { name: string; phone: string; programId: string; indexNumber: string; subjectIds: string[] },
+  path: string
+): Promise<{ error?: string }> {
+  const { token } = await requireSessionWithToken(["ADMIN"]);
+  if (!input.name.trim() || !input.phone.trim() || !input.programId) {
+    return { error: "Name, phone number, and program are required." };
+  }
+  try {
+    await api.updateUser(token, userId, {
+      name: input.name,
+      phone: input.phone,
+      programId: input.programId,
+      indexNumber: input.indexNumber || undefined,
+      subjectIds: input.subjectIds,
+    });
+    revalidatePath(path);
+    return {};
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not save this student's details." };
+  }
+}
+
+// Deletes a student's account outright (also removes their device binding
+// and attendance history — see the backend route's comment for why). Used
+// for a duplicate or mistakenly self-registered account; there's no undo.
+export async function deleteUserAction(userId: string, path: string): Promise<{ error?: string }> {
+  const { token } = await requireSessionWithToken(["ADMIN"]);
+  try {
+    await api.deleteUser(token, userId);
+    revalidatePath(path);
+    return {};
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not delete this account." };
   }
 }
 

@@ -1,26 +1,25 @@
 import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
-import { createStudentAction, toggleUserActiveAction } from "@/app/actions/admin";
+import { createStudentAction } from "@/app/actions/admin";
 import { ActionForm } from "@/components/ActionForm";
-import { Card, PageHeader, inputClass, Badge, secondaryButtonClass } from "@/components/ui";
-import ResetDeviceButton from "@/components/ResetDeviceButton";
-import ResetPasswordButton from "@/components/ResetPasswordButton";
+import { Card, PageHeader, inputClass } from "@/components/ui";
+import StudentRow from "@/components/StudentRow";
 
 export default async function StudentsPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
-  const [students, programs] = await Promise.all([
+  const [students, programs, subjects] = await Promise.all([
     api.listUsersByRole(token, "STUDENT"),
     api.listPrograms(token),
+    api.listSubjects(token),
   ]);
   const devices = await Promise.all(students.map((s) => api.getStudentDevice(token, s.id)));
   const deviceByStudent = new Map(students.map((s, i) => [s.id, devices[i]]));
-  const programName = (id: string | null) => programs.find((p) => p.id === id)?.name ?? "—";
 
   return (
     <div>
       <PageHeader
         title="Students"
-        subtitle="Every student is registered under a program. If a student's phone is lost or replaced, reset their device here so they can check in from the new one."
+        subtitle="Every student is registered under a program and the course(s) they picked at sign-up. If a student's phone is lost or replaced, reset their device here so they can check in from the new one."
       />
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -30,48 +29,23 @@ export default async function StudentsPage() {
               <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium">Student</th>
-                  <th className="text-left px-4 py-3 font-medium">Program</th>
+                  <th className="text-left px-4 py-3 font-medium">Program / courses</th>
                   <th className="text-left px-4 py-3 font-medium">Device</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-right px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {students.map((s) => {
-                  const device = deviceByStudent.get(s.id);
-                  return (
-                    <tr key={s.id} className="border-t border-slate-100">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-slate-900">{s.name}</div>
-                        <div className="text-xs text-slate-400">
-                          {s.index_number ?? "no index #"} · {s.phone}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{programName(s.program_id)}</td>
-                      <td className="px-4 py-3">
-                        {device?.device_id ? (
-                          <Badge tone="green">Bound{device.reset_count > 0 ? ` (reset ×${device.reset_count})` : ""}</Badge>
-                        ) : (
-                          <Badge tone="slate">Not yet bound</Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {s.is_active ? <Badge tone="green">Active</Badge> : <Badge tone="red">Deactivated</Badge>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <ResetPasswordButton userId={s.id} userName={s.name} userPhone={s.phone} path="/admin/students" />
-                          {device?.device_id && <ResetDeviceButton studentId={s.id} studentName={s.name} />}
-                          <form action={toggleUserActiveAction.bind(null, s.id, !s.is_active, "/admin/students")}>
-                            <button type="submit" className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs`}>
-                              {s.is_active ? "Deactivate" : "Reactivate"}
-                            </button>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {students.map((s) => (
+                  <StudentRow
+                    key={s.id}
+                    student={s}
+                    programs={programs}
+                    subjects={subjects}
+                    device={deviceByStudent.get(s.id) ?? null}
+                    path="/admin/students"
+                  />
+                ))}
               </tbody>
             </table>
             {students.length === 0 && (
@@ -106,6 +80,43 @@ export default async function StudentsPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Courses offered (optional)
+                </label>
+                <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-lg px-3 py-2 space-y-2">
+                  {subjects.length === 0 ? (
+                    <p className="text-xs text-slate-400">No courses set up yet.</p>
+                  ) : (
+                    programs.map((p) => {
+                      const inProgram = subjects.filter((s) => s.program_id === p.id);
+                      if (inProgram.length === 0) return null;
+                      return (
+                        <div key={p.id}>
+                          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">{p.name}</p>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
+                            {inProgram.map((s) => (
+                              <label key={s.id} className="flex items-center gap-1.5 text-xs text-slate-700">
+                                <input
+                                  type="checkbox"
+                                  name="subjectIds"
+                                  value={s.id}
+                                  className="rounded border-slate-300"
+                                />
+                                {s.name}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Only tick courses from the program you selected above. Leaving none checked counts this student as
+                  offering every course in their program.
+                </p>
               </div>
             </div>
           </ActionForm>

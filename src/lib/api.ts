@@ -75,6 +75,7 @@ export function registerStudent(input: {
   confirmPassword: string;
   programId: string;
   indexNumber: string;
+  subjectIds: string[];
 }) {
   return request<{ token: string; user: UserRow }>("/auth/register-student", { method: "POST", body: input });
 }
@@ -93,6 +94,16 @@ export function createProgram(token: string, input: { name: string; key: string;
 }
 
 // ---- Subjects ----
+// Public, unauthenticated — same reasoning as listProgramsPublic: the student
+// self-registration page needs each program's course list so a new student
+// can pick which they're offering, before they have any token. Deliberately
+// minimal (id + name + programId).
+export function listSubjectsPublic(opts?: { programId?: string }) {
+  const params = new URLSearchParams();
+  if (opts?.programId) params.set("programId", opts.programId);
+  const qs = params.toString();
+  return request<{ id: string; name: string; programId: string }[]>(`/subjects/public${qs ? `?${qs}` : ""}`);
+}
 export function listSubjects(token: string, opts?: { programId?: string; teacherId?: string }) {
   const params = new URLSearchParams();
   if (opts?.programId) params.set("programId", opts.programId);
@@ -121,12 +132,33 @@ export function listUsersByRole(token: string, role: Role, opts?: { programId?: 
 }
 export function createUser(
   token: string,
-  input: { role: Role; name: string; phone: string; programId?: string; indexNumber?: string }
+  input: {
+    role: Role;
+    name: string;
+    phone: string;
+    programId?: string;
+    indexNumber?: string;
+    subjectIds?: string[];
+  }
 ) {
   return request<{ user: UserRow; tempPassword: string }>("/users", { method: "POST", token, body: input });
 }
 export function setUserActive(token: string, userId: string, isActive: boolean) {
   return request<UserRow>(`/users/${userId}/active`, { method: "PATCH", token, body: { isActive } });
+}
+// General admin edit — every field optional except subjectIds, which (like
+// promoteToCourseRep) is always a full replacement whenever it's included at
+// all, even as an empty array. See the backend route's comment
+// (routes/users.js) for why an empty array is meaningful, not a no-op.
+export function updateUser(
+  token: string,
+  userId: string,
+  input: { name?: string; phone?: string; programId?: string; indexNumber?: string; subjectIds?: string[] }
+) {
+  return request<{ user: UserRow }>(`/users/${userId}`, { method: "PATCH", token, body: input });
+}
+export function deleteUser(token: string, userId: string) {
+  return request<{ success: true }>(`/users/${userId}`, { method: "DELETE", token });
 }
 export function resetUserPassword(token: string, userId: string) {
   return request<{ user: UserRow; tempPassword: string }>(`/users/${userId}/reset-password`, {

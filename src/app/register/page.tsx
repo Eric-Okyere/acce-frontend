@@ -8,9 +8,10 @@ import RegisterForm from "./RegisterForm";
 // new student has no token yet to call the normal /programs endpoint with.
 export default async function RegisterPage() {
   let programs: { id: string; name: string }[] = [];
+  let subjects: { id: string; name: string; programId: string }[] = [];
   let loadError: string | null = null;
   try {
-    programs = await api.listProgramsPublic();
+    [programs, subjects] = await Promise.all([api.listProgramsPublic(), api.listSubjectsPublic()]);
   } catch {
     loadError = "Couldn't load the list of programs. Refresh the page, or ask your admin to register you instead.";
   }
@@ -36,7 +37,7 @@ export default async function RegisterPage() {
           {loadError ? (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{loadError}</p>
           ) : (
-            <RegisterForm programs={programs} />
+            <RegisterForm programs={programs} subjects={subjects} />
           )}
         </div>
         <p className="text-xs text-slate-400 text-center mt-6">

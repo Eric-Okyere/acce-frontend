@@ -39,6 +39,14 @@ export interface UserRow {
   // subjects. Empty for every other role and for a course rep not yet
   // assigned any.
   responsible_subject_ids: string[];
+  // The course(s) this STUDENT (or promoted course rep) is offering — chosen
+  // at registration (see app/register/RegisterForm.tsx) or edited later by
+  // an admin from the Students page. This is what scopes a teacher's
+  // roster/report to only the students actually taking their subject. Empty
+  // means the account predates this feature (or an admin cleared it) — the
+  // backend then falls back to treating them as offering every subject in
+  // their program, same as before this feature existed.
+  enrolled_subject_ids: string[];
   is_active: boolean;
   must_reset_password: boolean;
   created_at: string;

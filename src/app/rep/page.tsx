@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
-import { lecturePhase } from "@/lib/lecturePhase";
+import { lecturePhase, sortLecturesForDisplay } from "@/lib/lecturePhase";
 import { Card, PageHeader, Badge, buttonClass } from "@/components/ui";
 
 const PHASE_TONE = {
@@ -25,7 +25,12 @@ export default async function RepDashboardPage() {
   ]);
   const subjectById = new Map(subjects.map((s) => [s.id, s]));
   const hallById = new Map(halls.map((h) => [h.id, h]));
-  const upcoming = upcomingLectures.map((l) => ({ lecture: l, phase: lecturePhase(l) }));
+  // Ongoing lecture(s) always on top — see lib/lecturePhase.ts.
+  const sortedLectures = sortLecturesForDisplay(lectures, (l) => l);
+  const upcoming = sortLecturesForDisplay(upcomingLectures, (l) => l).map((l) => ({
+    lecture: l,
+    phase: lecturePhase(l),
+  }));
 
   return (
     <div>
@@ -40,7 +45,7 @@ export default async function RepDashboardPage() {
       />
 
       <div className="space-y-3 mb-10">
-        {lectures.map((lec) => {
+        {sortedLectures.map((lec) => {
           const subject = subjectById.get(lec.subject_id);
           const hall = hallById.get(lec.lecture_hall_id);
           const phase = lecturePhase(lec);
