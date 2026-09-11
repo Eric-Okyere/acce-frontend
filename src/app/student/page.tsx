@@ -3,12 +3,14 @@ import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { lecturePhase, sortLecturesForDisplay } from "@/lib/lecturePhase";
 import { Card, PageHeader, Badge, buttonClass } from "@/components/ui";
+import CourseSelector from "@/components/CourseSelector";
 
 const STATUS_TONE = { PRESENT: "green", INCOMPLETE: "amber", ABSENT: "red" } as const;
 
 export default async function StudentHomePage() {
   const { session, token } = await requireSessionWithToken(["STUDENT"]);
-  const [upcomingLectures, history, device, subjects, halls] = await Promise.all([
+  const [me, upcomingLectures, history, device, subjects, halls] = await Promise.all([
+    api.getMe(token),
     api.listUpcomingLecturesForMyProgram(token),
     api.getMyAttendanceHistory(token),
     api.getMyDevice(token),
@@ -17,6 +19,16 @@ export default async function StudentHomePage() {
   ]);
   const subjectById = new Map(subjects.map((s) => [s.id, s]));
   const hallById = new Map(halls.map((h) => [h.id, h]));
+
+  // Whether this account has explicitly chosen the courses it's offering —
+  // see lib/enrollment.js on the backend. If not, prompt for a selection
+  // right here instead of showing attendance numbers for the implicit
+  // "everything in the program" fallback, which isn't what was actually asked.
+  const hasChosenCourses = me.enrolled_subject_ids.length > 0;
+  const courseStats = hasChosenCourses ? await api.getMyCourseStats(token) : [];
+  const programSubjects = subjects
+    .filter((s) => s.program_id === me.program_id)
+    .map((s) => ({ id: s.id, name: s.name }));
 
   // Ongoing lecture(s) always on top — see lib/lecturePhase.ts.
   const upcoming = sortLecturesForDisplay(upcomingLectures, (l) => l).map((l) => ({
@@ -46,6 +58,30 @@ export default async function StudentHomePage() {
           </p>
         </Card>
       )}
+
+      <div className="mb-6">
+        {hasChosenCourses ? (
+          <>
+            <h2 className="font-semibold text-slate-900 mb-3">Your courses</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {courseStats.map((c) => (
+                <Card key={c.subjectId} className="p-4">
+                  <p className="font-medium text-slate-900">{c.subjectName}</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    <span className="text-lg font-semibold text-slate-900">{c.present}</span>
+                    <span className="text-slate-400"> / {c.total} lectures</span>
+                  </p>
+                  {c.total > 0 && (
+                    <p className="text-xs text-slate-400 mt-0.5">{c.rate}% attendance</p>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </>
+        ) : (
+          <CourseSelector subjects={programSubjects} />
+        )}
+      </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <div>

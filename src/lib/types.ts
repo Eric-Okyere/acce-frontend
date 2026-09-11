@@ -167,6 +167,16 @@ export interface StudentStat {
   rate: number;
 }
 
+// A student's own attendance for one course they offer — "present X out of Y
+// lectures held so far". See GET /reports/me/courses.
+export interface MyCourseStat {
+  subjectId: string;
+  subjectName: string;
+  present: number;
+  total: number;
+  rate: number;
+}
+
 export interface SubjectReport {
   subjectId: string;
   subjectName: string;

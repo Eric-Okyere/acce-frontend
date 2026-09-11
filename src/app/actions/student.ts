@@ -54,6 +54,27 @@ export async function checkInAction(input: {
   }
 }
 
+export interface UpdateMySubjectsResult {
+  error?: string;
+  success?: boolean;
+}
+
+// Self-service course selection — for an account that hasn't picked which
+// courses it's offering yet (or wants to change its picks) without going
+// through an admin. See routes/users.js's PATCH /users/me/subjects.
+export async function updateMySubjectsAction(subjectIds: string[]): Promise<UpdateMySubjectsResult> {
+  const { token } = await requireSessionWithToken(["STUDENT", "COURSE_REP"]);
+  if (subjectIds.length === 0) return { error: "Choose at least one course you're offering." };
+  try {
+    await api.updateMySubjects(token, subjectIds);
+    revalidatePath("/student");
+    revalidatePath("/rep");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not save your courses." };
+  }
+}
+
 export async function checkOutAction(input: {
   lectureId: string;
   qrToken: string;

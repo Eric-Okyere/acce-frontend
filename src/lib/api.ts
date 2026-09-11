@@ -15,6 +15,7 @@ import type {
   StudentHistoryEntry,
   ScanCandidate,
   SubjectReport,
+  MyCourseStat,
   Role,
 } from "@/lib/types";
 
@@ -160,6 +161,13 @@ export function updateUser(
 export function deleteUser(token: string, userId: string) {
   return request<{ success: true }>(`/users/${userId}`, { method: "DELETE", token });
 }
+// Self-service — a student picking/changing which courses THEY say they're
+// offering (as opposed to updateUser above, which is admin-only and can act
+// on anyone). Always a full replacement, and the backend requires at least
+// one course — see the route's comment in routes/users.js.
+export function updateMySubjects(token: string, subjectIds: string[]) {
+  return request<{ user: UserRow }>("/users/me/subjects", { method: "PATCH", token, body: { subjectIds } });
+}
 export function resetUserPassword(token: string, userId: string) {
   return request<{ user: UserRow; tempPassword: string }>(`/users/${userId}/reset-password`, {
     method: "PATCH",
@@ -283,6 +291,11 @@ export function getMyAttendanceHistory(token: string) {
 // ---- Reports ----
 export function getSubjectReport(token: string, subjectId: string) {
   return request<SubjectReport>(`/reports/subjects/${subjectId}`, { token });
+}
+// A student's/course rep's own attendance broken down by course — present
+// count out of lectures held so far, for each course they offer.
+export function getMyCourseStats(token: string) {
+  return request<MyCourseStat[]>("/reports/me/courses", { token });
 }
 
 // ---- Audit ----
