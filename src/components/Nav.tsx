@@ -70,7 +70,19 @@ export default function Nav({
               <div className="text-xs text-slate-500 leading-tight">{roleLabel}</div>
             </div>
             <Link href="/account/change-password" className="text-sm font-medium text-slate-500 hover:text-blue-700 px-2 py-1 hidden sm:inline">Password</Link>
-            <form action={logoutAction}>
+            {/* A plain confirm() before submitting — Nav is already a client
+                component (usePathname above), so this costs nothing extra.
+                onSubmit runs before the server action fires; preventDefault()
+                there stops it from ever being invoked, same as declining any
+                other confirm-first destructive action in this app. */}
+            <form
+              action={logoutAction}
+              onSubmit={(e) => {
+                if (!window.confirm("Sign out of ACCE Attendance?")) {
+                  e.preventDefault();
+                }
+              }}
+            >
               <button type="submit" className="text-sm font-medium text-slate-500 hover:text-red-600 px-2 py-1">Sign out</button>
             </form>
           </div>
