@@ -67,8 +67,17 @@ export default function ScannerClient({
   const [candidates, setCandidates] = useState<ScanCandidate[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [manualToken, setManualToken] = useState("");
-  const [locating, setLocating] = useState(false);
   const [indexNumber, setIndexNumber] = useState("");
+
+  // The location used for check-in/out is now captured up front (and
+  // re-capturable on demand — see recaptureLocation below) rather than
+  // fetched silently inside handleAction — a GPS fix taken the moment the
+  // student walked in can be stale or just wrong by the time they actually
+  // tap Check in, and the old flow gave them no way to refresh it (or even
+  // see it) without a full failed submit round-trip against the backend.
+  const [location, setLocation] = useState<{ lat: number; lng: number; accuracy: number | null } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locatingManual, setLocatingManual] = useState(false);
 
   const readerRef = useRef<HTMLDivElement>(null);
   const scannerRef = useRef<import("html5-qrcode").Html5Qrcode | null>(null);
@@ -167,6 +176,10 @@ export default function ScannerClient({
     setToken(qrToken);
     setStage("resolving");
     setError(null);
+    // Every new scan is a new physical spot — never carry over a location
+    // captured for a previous hall.
+    setLocation(null);
+    setLocationError(null);
     const result = await resolveScanAction(qrToken);
     if (result.error) {
       setError(result.error);
@@ -177,6 +190,39 @@ export default function ScannerClient({
     setHallName(result.hallName ?? null);
     setCandidates(result.candidates ?? []);
     setStage("picking");
+    // Capture a first location fix as soon as there's something to check in
+    // to, so the student isn't staring at "Location not captured yet" with
+    // nothing to do but hunt for the button first — the button (below) stays
+    // available afterward for an explicit recapture.
+    void recaptureLocation();
+  }
+
+  // Captures (or re-captures) the phone's current GPS position and stores it
+  // for the Check in/out buttons below to use. Called once automatically
+  // above and also directly by the "Recapture location" button, so the
+  // student can refresh a stale or inaccurate fix — e.g. after physically
+  // moving closer to the hall, or after their first attempt failed with an
+  // out-of-range error — without leaving this screen.
+  async function recaptureLocation() {
+    setLocatingManual(true);
+    setLocationError(null);
+    try {
+      const pos = await getLocation();
+      setLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy ?? null,
+      });
+    } catch (e) {
+      setLocation(null);
+      setLocationError(
+        e instanceof Error
+          ? `Couldn't get your location: ${e.message}`
+          : "Couldn't get your location. Make sure location access is allowed for this site."
+      );
+    } finally {
+      setLocatingManual(false);
+    }
   }
 
   async function handleAction(candidate: ScanCandidate, kind: "in" | "out") {
@@ -185,37 +231,28 @@ export default function ScannerClient({
       setError("Enter your index number to check in.");
       return;
     }
+    if (!location) {
+      setError("Capture your location first — tap \"Recapture location\" below.");
+      return;
+    }
     setStage("submitting");
     setError(null);
-    setLocating(true);
-    try {
-      const pos = await getLocation();
-      setLocating(false);
-      const payload = {
-        lectureId: candidate.lectureId,
-        qrToken: token,
-        deviceId: getOrCreateDeviceId(),
-        indexNumber: kind === "in" ? indexNumber.trim() : "",
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy ?? null,
-      };
-      const result = kind === "in" ? await checkInAction(payload) : await checkOutAction(payload);
-      if (result.error) {
-        setError(result.error);
-        setStage("picking");
-      } else {
-        setMessage(result.success ?? "Done.");
-        setStage("done");
-      }
-    } catch (e) {
-      setLocating(false);
-      setError(
-        e instanceof Error
-          ? `Couldn't get your location: ${e.message}`
-          : "Couldn't get your location. Make sure location access is allowed for this site."
-      );
+    const payload = {
+      lectureId: candidate.lectureId,
+      qrToken: token,
+      deviceId: getOrCreateDeviceId(),
+      indexNumber: kind === "in" ? indexNumber.trim() : "",
+      lat: location.lat,
+      lng: location.lng,
+      accuracy: location.accuracy,
+    };
+    const result = kind === "in" ? await checkInAction(payload) : await checkOutAction(payload);
+    if (result.error) {
+      setError(result.error);
       setStage("picking");
+    } else {
+      setMessage(result.success ?? "Done.");
+      setStage("done");
     }
   }
 
@@ -228,6 +265,8 @@ export default function ScannerClient({
     setToken(null);
     setManualToken("");
     setIndexNumber("");
+    setLocation(null);
+    setLocationError(null);
   }
 
   return (
@@ -288,7 +327,29 @@ export default function ScannerClient({
               {error}
             </p>
           )}
-          {locating && <p className="text-sm text-slate-500 mb-3">Getting your location…</p>}
+          <div className="mb-4 flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            <div className="text-xs text-slate-600 min-w-0">
+              {locatingManual ? (
+                "📍 Getting your location…"
+              ) : location ? (
+                <>
+                  📍 Location captured
+                  {location.accuracy != null && ` · accuracy ~${Math.round(location.accuracy)}m`}
+                </>
+              ) : (
+                "📍 Location not captured yet"
+              )}
+              {locationError && <p className="text-red-600 mt-0.5">{locationError}</p>}
+            </div>
+            <button
+              type="button"
+              onClick={() => void recaptureLocation()}
+              disabled={locatingManual}
+              className={`${secondaryButtonClass} !py-1 !px-2 !text-xs shrink-0`}
+            >
+              {locatingManual ? "Locating…" : location ? "Recapture location" : "Get location"}
+            </button>
+          </div>
           {candidates.some((c) => !c.checkedIn) && (
             <div className="mb-4">
               <label htmlFor="scanIndexNumber" className="block text-sm font-medium text-slate-700 mb-1">
@@ -324,7 +385,7 @@ export default function ScannerClient({
                 <div className="mt-3 flex gap-2">
                   {!c.checkedIn && (
                     <button
-                      disabled={stage === "submitting" || !indexNumber.trim()}
+                      disabled={stage === "submitting" || !indexNumber.trim() || !location}
                       onClick={() => handleAction(c, "in")}
                       className={`${buttonClass} flex-1`}
                     >
@@ -333,7 +394,7 @@ export default function ScannerClient({
                   )}
                   {c.checkedIn && !c.checkedOut && (
                     <button
-                      disabled={stage === "submitting"}
+                      disabled={stage === "submitting" || !location}
                       onClick={() => handleAction(c, "out")}
                       className={`${buttonClass} flex-1`}
                     >
