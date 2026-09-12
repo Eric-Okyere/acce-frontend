@@ -33,3 +33,34 @@ export function groupByLevel<T extends { level: number | null }>(
     .map((level) => ({ level, label: levelLabel(level), items: items.filter((i) => i.level === level) }))
     .filter((g) => g.items.length > 0);
 }
+
+export interface LevelBreakdownColumn {
+  key: string;
+  label: string;
+  items: { level: number | null }[];
+}
+
+export interface LevelBreakdownRow {
+  level: number | null;
+  label: string;
+  counts: Record<string, number>;
+}
+
+/**
+ * Multi-column version of countByLevel — one row per level, one count per
+ * named column (e.g. Subjects / Students / Course reps), so a dashboard can
+ * show every level-scoped headcount side by side instead of as separate
+ * single-number widgets. Every level 100–400 is always a row, even if every
+ * column is 0 for it — a level doesn't stop existing just because nothing is
+ * assigned to it yet. The "not set" row only appears if at least one item in
+ * any column actually has no level.
+ */
+export function levelBreakdownTable(columns: LevelBreakdownColumn[]): LevelBreakdownRow[] {
+  const hasUnset = columns.some((c) => c.items.some((i) => i.level == null));
+  const order: (number | null)[] = hasUnset ? [...STUDENT_LEVELS, null] : [...STUDENT_LEVELS];
+  return order.map((level) => ({
+    level,
+    label: levelLabel(level),
+    counts: Object.fromEntries(columns.map((c) => [c.key, c.items.filter((i) => i.level === level).length])),
+  }));
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { Card, PageHeader, StatTile } from "@/components/ui";
-import LevelBreakdown from "@/components/LevelBreakdown";
+import LevelBreakdownTable from "@/components/LevelBreakdownTable";
 
 export default async function AdminDashboardPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
@@ -40,9 +40,26 @@ export default async function AdminDashboardPage() {
         <StatTile label="Lecture halls" value={halls.length} />
       </div>
 
+      {/* Every level is its own distinct cohort — nothing here lumps 100
+          through 400 into one combined number. Programs, Teachers, and
+          Lecture halls stay out of this table on purpose: none of them is a
+          level-scoped concept (a program spans every level, a teacher can
+          teach several levels at once — see the teacher Students page — and
+          a hall is just a physical room), so a "by level" split of those
+          would just repeat the same total in every row. */}
       <Card className="p-5 mb-8">
-        <h2 className="font-semibold text-slate-900 mb-3">Students by level</h2>
-        <LevelBreakdown items={[...students, ...reps]} />
+        <h2 className="font-semibold text-slate-900 mb-1">By level</h2>
+        <p className="text-xs text-slate-400 mb-3">
+          Every level-scoped headcount on this dashboard, broken out — a course rep counts as both a
+          course rep and a student, same as the totals above.
+        </p>
+        <LevelBreakdownTable
+          columns={[
+            { key: "subjects", label: "Subjects", items: subjects },
+            { key: "students", label: "Students", items: [...students, ...reps] },
+            { key: "courseReps", label: "Course reps", items: reps },
+          ]}
+        />
       </Card>
 
       <div className="grid lg:grid-cols-2 gap-6">
