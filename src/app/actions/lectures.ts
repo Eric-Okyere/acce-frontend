@@ -62,12 +62,18 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
 // admin, the lack of any ownership restriction) is enforced server-side —
 // see routes/lectures.js's PATCH "/:id/cancel" — so a 404 here just means
 // this wasn't the caller's own lecture (or, for a non-admin, someone else's).
-export async function cancelLectureAction(lectureId: string): Promise<void> {
+//
+// v3.43: this used to swallow every error silently (a plain <form
+// action={...}> with no way to show one), which meant a GENUINE rejection —
+// already cancelled, already ended, no longer yours — looked identical to
+// the v3.42 stale-cache bug: the button appeared to do nothing either way.
+// Now returns the error so the caller (a client component) can display it.
+export async function cancelLectureAction(lectureId: string): Promise<{ error?: string }> {
   const { token } = await requireSessionWithToken(["COURSE_REP", "TEACHER", "ADMIN"]);
   try {
     await api.cancelLecture(token, lectureId);
-  } catch {
-    // Nothing to surface here — see the comment above.
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not cancel this lecture." };
   }
   revalidatePath("/rep");
   revalidatePath(`/rep/lectures/${lectureId}`);
@@ -75,16 +81,18 @@ export async function cancelLectureAction(lectureId: string): Promise<void> {
   revalidatePath("/teacher/lectures");
   revalidatePath("/admin");
   revalidatePath("/admin/lectures");
+  return {};
 }
 
-// Ends an ongoing lecture early. Same sharing/ownership reasoning as
-// cancelLectureAction above — see routes/lectures.js's PATCH "/:id/end".
-export async function endLectureAction(lectureId: string): Promise<void> {
+// Ends an ongoing lecture early. Same sharing/ownership reasoning, and same
+// v3.43 error-surfacing change, as cancelLectureAction above — see
+// routes/lectures.js's PATCH "/:id/end".
+export async function endLectureAction(lectureId: string): Promise<{ error?: string }> {
   const { token } = await requireSessionWithToken(["COURSE_REP", "TEACHER", "ADMIN"]);
   try {
     await api.endLecture(token, lectureId);
-  } catch {
-    // Nothing to surface here — see the comment above.
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not end this lecture." };
   }
   revalidatePath("/rep");
   revalidatePath(`/rep/lectures/${lectureId}`);
@@ -92,4 +100,5 @@ export async function endLectureAction(lectureId: string): Promise<void> {
   revalidatePath("/teacher/lectures");
   revalidatePath("/admin");
   revalidatePath("/admin/lectures");
+  return {};
 }

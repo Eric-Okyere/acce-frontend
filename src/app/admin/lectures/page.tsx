@@ -2,8 +2,8 @@ import Link from "next/link";
 import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { lecturePhase, sortLecturesForDisplay } from "@/lib/lecturePhase";
-import { cancelLectureAction, endLectureAction } from "@/app/actions/lectures";
-import { Card, PageHeader, Badge, buttonClass, secondaryButtonClass } from "@/components/ui";
+import { LectureActionButtons } from "@/components/LectureActionButtons";
+import { Card, PageHeader, Badge, buttonClass } from "@/components/ui";
 
 const PHASE_TONE = {
   UPCOMING: "blue",
@@ -69,26 +69,7 @@ export default async function AdminLecturesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone={PHASE_TONE[phase]}>{phase}</Badge>
-                  {endable && (
-                    <form action={endLectureAction.bind(null, lec.id)}>
-                      <button
-                        type="submit"
-                        className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs !text-green-700 !border-green-200 hover:!bg-green-50`}
-                      >
-                        End
-                      </button>
-                    </form>
-                  )}
-                  {cancellable && (
-                    <form action={cancelLectureAction.bind(null, lec.id)}>
-                      <button
-                        type="submit"
-                        className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs !text-red-600 !border-red-200 hover:!bg-red-50`}
-                      >
-                        Cancel
-                      </button>
-                    </form>
-                  )}
+                  <LectureActionButtons lectureId={lec.id} endable={endable} cancellable={cancellable} />
                 </div>
               </div>
             </Card>
