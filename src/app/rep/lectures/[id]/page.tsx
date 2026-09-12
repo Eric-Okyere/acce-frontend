@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api";
 import { lecturePhase } from "@/lib/lecturePhase";
 import { cancelLectureAction, endLectureAction } from "@/app/actions/lectures";
 import { Card, PageHeader, Badge, secondaryButtonClass } from "@/components/ui";
+import { groupByLevel } from "@/lib/levels";
 
 const STATUS_TONE = { PRESENT: "green", INCOMPLETE: "amber", ABSENT: "red" } as const;
 
@@ -30,6 +31,9 @@ export default async function RepLectureDetailPage({ params }: { params: Promise
   const hall = halls.find((h) => h.id === lecture.lecture_hall_id);
   const phase = lecturePhase(lecture);
   const present = roster.filter((r) => r.status === "PRESENT").length;
+  // The roster for a single subject can span several levels at once (a
+  // combined class) — group it the same way the subject-wide dashboard does.
+  const levelGroups = groupByLevel(roster);
 
   return (
     <div>
@@ -78,25 +82,33 @@ export default async function RepLectureDetailPage({ params }: { params: Promise
               <th className="text-left px-4 py-3 font-medium">Status</th>
             </tr>
           </thead>
-          <tbody>
-            {roster.map((r) => (
-              <tr key={r.studentId} className="border-t border-slate-100">
-                <td className="px-4 py-3">
-                  <div className="font-medium text-slate-900">{r.studentName}</div>
-                  <div className="text-xs text-slate-400">{r.indexNumber ?? ""}</div>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {r.checkInAt ? new Date(r.checkInAt).toLocaleTimeString() : "—"}
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {r.checkOutAt ? new Date(r.checkOutAt).toLocaleTimeString() : "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+          {levelGroups.map((group) => (
+            <tbody key={group.label}>
+              <tr className="border-t border-slate-200 bg-slate-50">
+                <td colSpan={4} className="px-4 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  {group.label} · {group.items.length} student{group.items.length === 1 ? "" : "s"} ·{" "}
+                  {group.items.filter((r) => r.status === "PRESENT").length} present
                 </td>
               </tr>
-            ))}
-          </tbody>
+              {group.items.map((r) => (
+                <tr key={r.studentId} className="border-t border-slate-100">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900">{r.studentName}</div>
+                    <div className="text-xs text-slate-400">{r.indexNumber ?? ""}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {r.checkInAt ? new Date(r.checkInAt).toLocaleTimeString() : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {r.checkOutAt ? new Date(r.checkOutAt).toLocaleTimeString() : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          ))}
         </table>
       </Card>
     </div>

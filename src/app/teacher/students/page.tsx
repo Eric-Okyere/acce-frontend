@@ -3,6 +3,8 @@ import * as api from "@/lib/api";
 import { Card, PageHeader, Badge } from "@/components/ui";
 import ResetDeviceButton from "@/components/ResetDeviceButton";
 import ResetPasswordButton from "@/components/ResetPasswordButton";
+import LevelBreakdown from "@/components/LevelBreakdown";
+import { levelLabel } from "@/lib/levels";
 import type { UserRow } from "@/lib/types";
 
 // A teacher's own "Students" page — scoped to only the students (and
@@ -53,11 +55,21 @@ export default async function TeacherStudentsPage() {
           </p>
         </Card>
       ) : (
+        <>
+          {/* A teacher can teach more than one level at once (a combined
+              class, or several subjects at different levels) — this is the
+              at-a-glance count the device/password tools below don't show. */}
+          <Card className="p-5 mb-6">
+            <h2 className="font-semibold text-slate-900 mb-3">Students by level</h2>
+            <LevelBreakdown items={students} />
+          </Card>
+
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Student</th>
+                <th className="text-left px-4 py-3 font-medium">Level</th>
                 <th className="text-left px-4 py-3 font-medium">Offering</th>
                 <th className="text-left px-4 py-3 font-medium">Device</th>
                 <th className="text-right px-4 py-3 font-medium">Actions</th>
@@ -72,6 +84,7 @@ export default async function TeacherStudentsPage() {
                       <div className="font-medium text-slate-900">{s.name}</div>
                       <div className="text-xs text-slate-400">{s.index_number ?? ""}</div>
                     </td>
+                    <td className="px-4 py-3 text-slate-600">{levelLabel(s.level)}</td>
                     <td className="px-4 py-3 text-slate-600">
                       {(subjectNamesByStudent.get(s.id) ?? []).join(", ")}
                     </td>
@@ -108,6 +121,7 @@ export default async function TeacherStudentsPage() {
             </p>
           )}
         </div>
+        </>
       )}
     </div>
   );

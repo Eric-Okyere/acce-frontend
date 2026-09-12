@@ -125,6 +125,10 @@ export interface RosterEntry {
   studentId: string;
   studentName: string;
   indexNumber: string | null;
+  // The student's own level (100–400, or null) — lets a lecture's roster be
+  // grouped by level, since one subject can have students across several
+  // levels at once.
+  level: number | null;
   status: "PRESENT" | "INCOMPLETE" | "ABSENT";
   checkInAt: string | null;
   checkOutAt: string | null;
@@ -168,6 +172,9 @@ export interface StudentStat {
   studentId: string;
   name: string;
   indexNumber: string | null;
+  // The student's own level (100–400, or null) — lets the subject's
+  // attendance table be grouped by level (see SubjectReportView.tsx).
+  level: number | null;
   present: number;
   incomplete: number;
   absent: number;

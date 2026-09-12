@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { Card, PageHeader, StatTile } from "@/components/ui";
+import LevelBreakdown from "@/components/LevelBreakdown";
 
 export default async function AdminDashboardPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
@@ -38,6 +39,11 @@ export default async function AdminDashboardPage() {
         <StatTile label="Students" value={totalStudents} hint="Includes course reps" />
         <StatTile label="Lecture halls" value={halls.length} />
       </div>
+
+      <Card className="p-5 mb-8">
+        <h2 className="font-semibold text-slate-900 mb-3">Students by level</h2>
+        <LevelBreakdown items={[...students, ...reps]} />
+      </Card>
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="p-5">

@@ -13,9 +13,11 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import type { SubjectReport } from "@/lib/types";
+import type { SubjectReport, StudentStat } from "@/lib/types";
 import { Card, StatTile, Badge } from "@/components/ui";
 import { AT_RISK_THRESHOLD } from "@/lib/constants";
+import { groupByLevel } from "@/lib/levels";
+import LevelBreakdown from "@/components/LevelBreakdown";
 
 const COLORS = { present: "#059669", incomplete: "#d97706", absent: "#dc2626" };
 const SERIES: { key: "Present" | "Incomplete" | "Absent"; color: string }[] = [
@@ -90,6 +92,16 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
 
   const atRisk = report.studentStats.filter((s) => s.rate < AT_RISK_THRESHOLD && s.totalLectures > 0);
 
+  // A subject/teacher can have students across several levels at once (a
+  // combined class) — group the roster table by level rather than listing
+  // everyone flat, with each group's own attendance subtotal.
+  const levelGroups = groupByLevel(report.studentStats);
+  function groupRate(students: StudentStat[]) {
+    const present = students.reduce((sum, s) => sum + s.present, 0);
+    const slots = students.reduce((sum, s) => sum + s.totalLectures, 0);
+    return slots > 0 ? Math.round((present / slots) * 1000) / 10 : 0;
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -98,6 +110,11 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
         <StatTile label="Students on roster" value={report.rosterSize} />
         <StatTile label="At-risk students" value={atRisk.length} hint={`< ${AT_RISK_THRESHOLD}% attendance`} />
       </div>
+
+      <Card className="p-5">
+        <h3 className="font-semibold text-slate-900 mb-3">Students by level</h3>
+        <LevelBreakdown items={report.studentStats} />
+      </Card>
 
       {report.lectureStats.length === 0 ? (
         <Card className="p-6 text-center text-sm text-slate-500">
@@ -211,26 +228,34 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
                 <th className="text-right py-2 font-medium">Rate</th>
               </tr>
             </thead>
-            <tbody>
-              {report.studentStats.map((s) => (
-                <tr key={s.studentId} className="border-t border-slate-100">
-                  <td className="py-2 font-medium text-slate-900">{s.name}</td>
-                  <td className="py-2 text-slate-500">{s.indexNumber ?? "—"}</td>
-                  <td className="py-2 text-right text-emerald-700">{s.present}</td>
-                  <td className="py-2 text-right text-amber-700">{s.incomplete}</td>
-                  <td className="py-2 text-right text-red-700">{s.absent}</td>
-                  <td className="py-2 text-right">
-                    {s.totalLectures === 0 ? (
-                      <span className="text-slate-400">—</span>
-                    ) : s.rate < AT_RISK_THRESHOLD ? (
-                      <Badge tone="red">{s.rate}%</Badge>
-                    ) : (
-                      <Badge tone="green">{s.rate}%</Badge>
-                    )}
+            {levelGroups.map((group) => (
+              <tbody key={group.label}>
+                <tr className="border-t border-slate-200 bg-slate-50">
+                  <td colSpan={6} className="py-1.5 px-1 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    {group.label} · {group.items.length} student{group.items.length === 1 ? "" : "s"} ·{" "}
+                    {groupRate(group.items)}% avg
                   </td>
                 </tr>
-              ))}
-            </tbody>
+                {group.items.map((s) => (
+                  <tr key={s.studentId} className="border-t border-slate-100">
+                    <td className="py-2 font-medium text-slate-900">{s.name}</td>
+                    <td className="py-2 text-slate-500">{s.indexNumber ?? "—"}</td>
+                    <td className="py-2 text-right text-emerald-700">{s.present}</td>
+                    <td className="py-2 text-right text-amber-700">{s.incomplete}</td>
+                    <td className="py-2 text-right text-red-700">{s.absent}</td>
+                    <td className="py-2 text-right">
+                      {s.totalLectures === 0 ? (
+                        <span className="text-slate-400">—</span>
+                      ) : s.rate < AT_RISK_THRESHOLD ? (
+                        <Badge tone="red">{s.rate}%</Badge>
+                      ) : (
+                        <Badge tone="green">{s.rate}%</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
           </table>
         </div>
       </Card>
@@ -239,10 +264,11 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
 }
 
 function toCsv(report: SubjectReport): string {
-  const header = ["Student", "Index Number", "Present", "Incomplete", "Absent", "Total Lectures", "Rate (%)"];
+  const header = ["Student", "Index Number", "Level", "Present", "Incomplete", "Absent", "Total Lectures", "Rate (%)"];
   const rows = report.studentStats.map((s) => [
     s.name,
     s.indexNumber ?? "",
+    s.level ?? "",
     s.present,
     s.incomplete,
     s.absent,
