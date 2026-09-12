@@ -6,7 +6,7 @@ import { Card, PageHeader, inputClass, Badge } from "@/components/ui";
 import AssignTeacherForm from "./AssignTeacherForm";
 import SetLevelForm from "./SetLevelForm";
 import LevelBreakdownTable from "@/components/LevelBreakdownTable";
-import { levelLabel, parseLevelKey } from "@/lib/levels";
+import { groupByLevel, levelLabel, parseLevelKey } from "@/lib/levels";
 
 export default async function SubjectsPage({
   searchParams,
@@ -54,36 +54,50 @@ export default async function SubjectsPage({
           {programs.map((p) => {
             const inProgram = filteredSubjects.filter((s) => s.program_id === p.id);
             if (inProgram.length === 0) return null;
+            // "Show all courses under each program according to levels" — one
+            // sub-section per level (100 → 400, then "not set"), same fixed
+            // order and grouping helper groupByLevel() uses everywhere else
+            // in the app, nested under the program heading.
+            const levelGroups = groupByLevel(inProgram);
             return (
               <div key={p.id}>
                 <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">{p.name}</h3>
-                <div className="space-y-3">
-                  {inProgram.map((s) => (
-                    <Card key={s.id} className="p-4">
-                      <div className="flex items-start justify-between gap-3 flex-wrap">
-                        <div>
-                          <h4 className="font-medium text-slate-900">
-                            {s.name} {s.code && <span className="text-slate-400 font-normal">· {s.code}</span>}
-                          </h4>
-                          <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            {s.level ? (
-                              <Badge tone="slate">Level {s.level}</Badge>
-                            ) : (
-                              <Badge tone="amber">No level set</Badge>
-                            )}
-                            {teacherName(s.teacher_id) ? (
-                              <Badge tone="blue">Taught by {teacherName(s.teacher_id)}</Badge>
-                            ) : (
-                              <Badge tone="amber">No teacher assigned</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <AssignTeacherForm subjectId={s.id} teachers={teachers} currentTeacherId={s.teacher_id} />
-                          <SetLevelForm subjectId={s.id} currentLevel={s.level} />
-                        </div>
+                <div className="space-y-5">
+                  {levelGroups.map((group) => (
+                    <div key={group.label}>
+                      <h4 className="text-xs font-medium text-slate-500 mb-2 pl-2 border-l-2 border-slate-200">
+                        {group.label} · {group.items.length} course{group.items.length === 1 ? "" : "s"}
+                      </h4>
+                      <div className="space-y-3">
+                        {group.items.map((s) => (
+                          <Card key={s.id} className="p-4">
+                            <div className="flex items-start justify-between gap-3 flex-wrap">
+                              <div>
+                                <h5 className="font-medium text-slate-900">
+                                  {s.name} {s.code && <span className="text-slate-400 font-normal">· {s.code}</span>}
+                                </h5>
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                  {s.level ? (
+                                    <Badge tone="slate">Level {s.level}</Badge>
+                                  ) : (
+                                    <Badge tone="amber">No level set</Badge>
+                                  )}
+                                  {teacherName(s.teacher_id) ? (
+                                    <Badge tone="blue">Taught by {teacherName(s.teacher_id)}</Badge>
+                                  ) : (
+                                    <Badge tone="amber">No teacher assigned</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <AssignTeacherForm subjectId={s.id} teachers={teachers} currentTeacherId={s.teacher_id} />
+                                <SetLevelForm subjectId={s.id} currentLevel={s.level} />
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
                       </div>
-                    </Card>
+                    </div>
                   ))}
                 </div>
               </div>
