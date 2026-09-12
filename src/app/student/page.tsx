@@ -4,6 +4,7 @@ import * as api from "@/lib/api";
 import { lecturePhase, sortLecturesForDisplay } from "@/lib/lecturePhase";
 import { Card, PageHeader, Badge, buttonClass } from "@/components/ui";
 import CourseSelector from "@/components/CourseSelector";
+import LevelSelector from "@/components/LevelSelector";
 
 const STATUS_TONE = { PRESENT: "green", INCOMPLETE: "amber", ABSENT: "red" } as const;
 
@@ -28,7 +29,7 @@ export default async function StudentHomePage() {
   const courseStats = hasChosenCourses ? await api.getMyCourseStats(token) : [];
   const programSubjects = subjects
     .filter((s) => s.program_id === me.program_id)
-    .map((s) => ({ id: s.id, name: s.name }));
+    .map((s) => ({ id: s.id, name: s.name, level: s.level }));
 
   // Ongoing lecture(s) always on top — see lib/lecturePhase.ts.
   const upcoming = sortLecturesForDisplay(upcomingLectures, (l) => l).map((l) => ({
@@ -57,6 +58,12 @@ export default async function StudentHomePage() {
             you check in. From then on, only this phone can check in for you.
           </p>
         </Card>
+      )}
+
+      {me.level == null && (
+        <div className="mb-6">
+          <LevelSelector />
+        </div>
       )}
 
       <div className="mb-6">

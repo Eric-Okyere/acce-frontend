@@ -27,16 +27,20 @@ export async function createProgramAction(_prev: FormState, fd: FormData): Promi
   }
 }
 
+const VALID_LEVELS = [100, 200, 300, 400];
+
 export async function createSubjectAction(_prev: FormState, fd: FormData): Promise<FormState> {
   const { token } = await requireSessionWithToken(["ADMIN"]);
   const programId = str(fd, "programId");
   const name = str(fd, "name");
   const code = str(fd, "code");
   const teacherId = str(fd, "teacherId");
+  const level = Number(str(fd, "level"));
   if (!programId || !name) return { error: "Program and subject name are required." };
+  if (!VALID_LEVELS.includes(level)) return { error: "Choose a level for this course — 100, 200, 300 or 400." };
 
   try {
-    const subject = await api.createSubject(token, { programId, name, code: code || null, teacherId: teacherId || null });
+    const subject = await api.createSubject(token, { programId, name, level, code: code || null, teacherId: teacherId || null });
     revalidatePath("/admin/subjects");
     return { success: `Subject "${subject.name}" created.` };
   } catch (e) {
@@ -61,6 +65,22 @@ export async function assignTeacherAction(_prev: FormState, fd: FormData): Promi
     return { success: "Teacher assignment updated." };
   } catch (e) {
     return { error: e instanceof ApiError ? e.message : "Could not update the teacher assignment." };
+  }
+}
+
+export async function setSubjectLevelAction(_prev: FormState, fd: FormData): Promise<FormState> {
+  const { token } = await requireSessionWithToken(["ADMIN"]);
+  const subjectId = str(fd, "subjectId");
+  const level = Number(str(fd, "level"));
+  if (!subjectId) return { error: "Missing subject." };
+  if (!VALID_LEVELS.includes(level)) return { error: "Choose a level — 100, 200, 300 or 400." };
+
+  try {
+    await api.setSubjectLevel(token, subjectId, level);
+    revalidatePath("/admin/subjects");
+    return { success: "Level updated." };
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not update the level." };
   }
 }
 
@@ -163,8 +183,12 @@ export async function createStudentAction(_prev: FormState, fd: FormData): Promi
   const phone = str(fd, "phone");
   const indexNumber = str(fd, "indexNumber");
   const programId = str(fd, "programId");
+  const levelRaw = str(fd, "level");
   const subjectIds = fd.getAll("subjectIds").map(String).filter(Boolean);
   if (!name || !phone || !programId) return { error: "Name, phone number, and program are required." };
+  if (levelRaw && !VALID_LEVELS.includes(Number(levelRaw))) {
+    return { error: "Level must be 100, 200, 300 or 400." };
+  }
 
   try {
     const { user: student, tempPassword } = await api.createUser(token, {
@@ -173,6 +197,7 @@ export async function createStudentAction(_prev: FormState, fd: FormData): Promi
       phone,
       programId,
       indexNumber: indexNumber || undefined,
+      level: levelRaw ? Number(levelRaw) : null,
       subjectIds,
     });
     revalidatePath("/admin/students");
@@ -194,12 +219,22 @@ export async function createStudentAction(_prev: FormState, fd: FormData): Promi
 // is meaningful rather than "leave unchanged".
 export async function updateStudentAction(
   userId: string,
-  input: { name: string; phone: string; programId: string; indexNumber: string; subjectIds: string[] },
+  input: {
+    name: string;
+    phone: string;
+    programId: string;
+    indexNumber: string;
+    level: number | null;
+    subjectIds: string[];
+  },
   path: string
 ): Promise<{ error?: string }> {
   const { token } = await requireSessionWithToken(["ADMIN"]);
   if (!input.name.trim() || !input.phone.trim() || !input.programId) {
     return { error: "Name, phone number, and program are required." };
+  }
+  if (input.level !== null && !VALID_LEVELS.includes(input.level)) {
+    return { error: "Level must be 100, 200, 300 or 400." };
   }
   try {
     await api.updateUser(token, userId, {
@@ -207,6 +242,7 @@ export async function updateStudentAction(
       phone: input.phone,
       programId: input.programId,
       indexNumber: input.indexNumber || undefined,
+      level: input.level,
       subjectIds: input.subjectIds,
     });
     revalidatePath(path);

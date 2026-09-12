@@ -82,6 +82,16 @@ export default async function StudentsPage() {
                 </select>
               </div>
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Level (optional)</label>
+                <select name="level" defaultValue="" className={inputClass}>
+                  <option value="">Not set</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Courses offered (optional)
                 </label>

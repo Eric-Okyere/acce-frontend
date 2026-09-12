@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTransition } from "react";
 import { logoutAction } from "@/app/actions/auth";
 
 export interface NavItem {
@@ -36,6 +37,7 @@ export default function Nav({
   roleLabel: string;
 }) {
   const pathname = usePathname();
+  const [signingOut, startSignOut] = useTransition();
 
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-10 no-print">
@@ -70,21 +72,26 @@ export default function Nav({
               <div className="text-xs text-slate-500 leading-tight">{roleLabel}</div>
             </div>
             <Link href="/account/change-password" className="text-sm font-medium text-slate-500 hover:text-blue-700 px-2 py-1 hidden sm:inline">Password</Link>
-            {/* A plain confirm() before submitting — Nav is already a client
-                component (usePathname above), so this costs nothing extra.
-                onSubmit runs before the server action fires; preventDefault()
-                there stops it from ever being invoked, same as declining any
-                other confirm-first destructive action in this app. */}
-            <form
-              action={logoutAction}
-              onSubmit={(e) => {
-                if (!window.confirm("Sign out of ACCE Attendance?")) {
-                  e.preventDefault();
-                }
+            {/* A plain confirm() before starting the transition — Nav is
+                already a client component (usePathname above), so this costs
+                nothing extra. Declining the confirm just never starts the
+                transition, same as declining any other confirm-first
+                destructive action in this app. useTransition (instead of a
+                plain form submit) is what lets the button show a
+                "Signing out…" pending state while logoutAction runs. */}
+            <button
+              type="button"
+              disabled={signingOut}
+              onClick={() => {
+                if (!window.confirm("Sign out of ACCE Attendance?")) return;
+                startSignOut(async () => {
+                  await logoutAction();
+                });
               }}
+              className="text-sm font-medium text-slate-500 hover:text-red-600 px-2 py-1 disabled:opacity-60"
             >
-              <button type="submit" className="text-sm font-medium text-slate-500 hover:text-red-600 px-2 py-1">Sign out</button>
-            </form>
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
           </div>
         </div>
       </div>

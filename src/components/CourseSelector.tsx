@@ -8,7 +8,11 @@ import { Card, buttonClass } from "@/components/ui";
 // the account has no explicit course selection yet (see
 // app/student/page.tsx) — lets the student pick them right there instead of
 // needing an admin to do it. See routes/users.js's PATCH /users/me/subjects.
-export default function CourseSelector({ subjects }: { subjects: { id: string; name: string }[] }) {
+export default function CourseSelector({
+  subjects,
+}: {
+  subjects: { id: string; name: string; level: number | null }[];
+}) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +41,7 @@ export default function CourseSelector({ subjects }: { subjects: { id: string; n
                 className="rounded border-slate-300"
               />
               {s.name}
+              {s.level && <span className="text-slate-400">· Level {s.level}</span>}
             </label>
           ))}
         </div>

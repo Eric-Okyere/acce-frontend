@@ -21,6 +21,10 @@ export interface SubjectRow {
   program_id: string;
   name: string;
   code: string | null;
+  // Year/level this course belongs to — 100 through 400. Null only for
+  // subjects created before this field existed; every new subject requires
+  // one (see routes/subjects.js).
+  level: number | null;
   teacher_id: string | null;
   is_active: boolean;
   created_at: string;
@@ -33,6 +37,10 @@ export interface UserRow {
   phone: string;
   index_number: string | null;
   program_id: string | null;
+  // The student's own year/level — 100 through 400. Distinct from a
+  // subject's own `level` (SubjectRow.level) — this is which year the
+  // student is in. Null only for accounts that predate this field.
+  level: number | null;
   // Only meaningful for role COURSE_REP — the subject(s) they're responsible
   // for scheduling lectures in. Set by an admin promoting a student (see
   // api.promoteToCourseRep); a course rep can be assigned one or more

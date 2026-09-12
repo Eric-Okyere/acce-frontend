@@ -8,7 +8,7 @@ import RegisterForm from "./RegisterForm";
 // new student has no token yet to call the normal /programs endpoint with.
 export default async function RegisterPage() {
   let programs: { id: string; name: string }[] = [];
-  let subjects: { id: string; name: string; programId: string }[] = [];
+  let subjects: { id: string; name: string; programId: string; level: number | null }[] = [];
   let loadError: string | null = null;
   try {
     [programs, subjects] = await Promise.all([api.listProgramsPublic(), api.listSubjectsPublic()]);

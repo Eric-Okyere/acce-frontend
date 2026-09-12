@@ -75,6 +75,27 @@ export async function updateMySubjectsAction(subjectIds: string[]): Promise<Upda
   }
 }
 
+export interface UpdateMyLevelResult {
+  error?: string;
+  success?: boolean;
+}
+
+// Self-service level selection — for an account that hasn't set its level
+// yet (or wants to change it) without going through an admin. See
+// routes/users.js's PATCH /users/me/level.
+export async function updateMyLevelAction(level: number): Promise<UpdateMyLevelResult> {
+  const { token } = await requireSessionWithToken(["STUDENT", "COURSE_REP"]);
+  if (![100, 200, 300, 400].includes(level)) return { error: "Choose your level — 100, 200, 300 or 400." };
+  try {
+    await api.updateMyLevel(token, level);
+    revalidatePath("/student");
+    revalidatePath("/rep");
+    return { success: true };
+  } catch (e) {
+    return { error: e instanceof ApiError ? e.message : "Could not save your level." };
+  }
+}
+
 export async function checkOutAction(input: {
   lectureId: string;
   qrToken: string;

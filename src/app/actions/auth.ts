@@ -77,6 +77,7 @@ export async function registerStudentAction(_prev: RegisterState, formData: Form
   const confirmPassword = String(formData.get("confirmPassword") || "");
   const programId = String(formData.get("programId") || "").trim();
   const indexNumber = String(formData.get("indexNumber") || "").trim();
+  const level = Number(formData.get("level"));
   const subjectIds = formData.getAll("subjectIds").map(String).filter(Boolean);
 
   if (!name || !phone || !password || !programId || !indexNumber) {
@@ -87,6 +88,9 @@ export async function registerStudentAction(_prev: RegisterState, formData: Form
   }
   if (password !== confirmPassword) {
     return { error: "Passwords don't match." };
+  }
+  if (![100, 200, 300, 400].includes(level)) {
+    return { error: "Choose your level — 100, 200, 300 or 400." };
   }
   if (subjectIds.length === 0) {
     return { error: "Choose at least one course you're offering." };
@@ -102,6 +106,7 @@ export async function registerStudentAction(_prev: RegisterState, formData: Form
       confirmPassword,
       programId,
       indexNumber,
+      level,
       subjectIds,
     });
     token = result.token;

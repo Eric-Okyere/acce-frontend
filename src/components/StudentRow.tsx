@@ -29,6 +29,7 @@ export default function StudentRow({
   const [name, setName] = useState(student.name);
   const [phone, setPhone] = useState(student.phone);
   const [indexNumber, setIndexNumber] = useState(student.index_number ?? "");
+  const [level, setLevel] = useState(student.level != null ? String(student.level) : "");
   const [programId, setProgramId] = useState(student.program_id ?? "");
   const [subjectIds, setSubjectIds] = useState<string[]>(student.enrolled_subject_ids);
   const [pending, startTransition] = useTransition();
@@ -50,6 +51,7 @@ export default function StudentRow({
     setName(student.name);
     setPhone(student.phone);
     setIndexNumber(student.index_number ?? "");
+    setLevel(student.level != null ? String(student.level) : "");
     setProgramId(student.program_id ?? "");
     setSubjectIds(student.enrolled_subject_ids);
   }
@@ -64,7 +66,16 @@ export default function StudentRow({
           </div>
         </td>
         <td className="px-4 py-3 text-slate-600">
-          {programName}
+          <div className="flex items-center gap-1.5">
+            <span>{programName}</span>
+            {student.level ? (
+              <Badge tone="slate">Level {student.level}</Badge>
+            ) : (
+              <span className="text-xs text-slate-400" title="No level on file yet.">
+                (no level)
+              </span>
+            )}
+          </div>
           <div className="mt-1 flex flex-wrap gap-1">
             {enrolledNames.length > 0 ? (
               enrolledNames.map((n) => (
@@ -129,6 +140,16 @@ export default function StudentRow({
                 />
               </div>
               <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Level</label>
+                <select value={level} onChange={(e) => setLevel(e.target.value)} className={`${inputClass} text-sm`}>
+                  <option value="">Not set</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Program</label>
                 <select
                   value={programId}
@@ -183,7 +204,7 @@ export default function StudentRow({
                   startTransition(async () => {
                     const res = await updateStudentAction(
                       student.id,
-                      { name, phone, programId, indexNumber, subjectIds },
+                      { name, phone, programId, indexNumber, level: level ? Number(level) : null, subjectIds },
                       path
                     );
                     if (res.error) setError(res.error);

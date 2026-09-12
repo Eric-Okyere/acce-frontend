@@ -12,7 +12,7 @@ export default function RegisterForm({
   subjects,
 }: {
   programs: { id: string; name: string }[];
-  subjects: { id: string; name: string; programId: string }[];
+  subjects: { id: string; name: string; programId: string; level: number | null }[];
 }) {
   const [state, formAction, pending] = useActionState(registerStudentAction, initialState);
   const router = useRouter();
@@ -87,6 +87,20 @@ export default function RegisterForm({
         </select>
       </div>
       <div>
+        <label htmlFor="level" className="block text-sm font-medium text-slate-700 mb-1">
+          Level
+        </label>
+        <select id="level" name="level" required defaultValue="" className={inputClass}>
+          <option value="" disabled>
+            Choose your level
+          </option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="300">300</option>
+          <option value="400">400</option>
+        </select>
+      </div>
+      <div>
         <span className="block text-sm font-medium text-slate-700 mb-1">Courses you&apos;re offering</span>
         {!programId ? (
           <p className="text-xs text-slate-400">Choose your program above first.</p>
@@ -105,6 +119,7 @@ export default function RegisterForm({
                   className="rounded border-slate-300"
                 />
                 {s.name}
+                {s.level && <span className="text-slate-400">· Level {s.level}</span>}
               </label>
             ))}
           </div>

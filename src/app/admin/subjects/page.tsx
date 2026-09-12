@@ -4,6 +4,7 @@ import { createSubjectAction } from "@/app/actions/admin";
 import { ActionForm } from "@/components/ActionForm";
 import { Card, PageHeader, inputClass, Badge } from "@/components/ui";
 import AssignTeacherForm from "./AssignTeacherForm";
+import SetLevelForm from "./SetLevelForm";
 
 export default async function SubjectsPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
@@ -32,7 +33,8 @@ export default async function SubjectsPage() {
                     {s.name} {s.code && <span className="text-slate-400 font-normal">· {s.code}</span>}
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">{programName(s.program_id)}</p>
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {s.level ? <Badge tone="slate">Level {s.level}</Badge> : <Badge tone="amber">No level set</Badge>}
                     {teacherName(s.teacher_id) ? (
                       <Badge tone="blue">Taught by {teacherName(s.teacher_id)}</Badge>
                     ) : (
@@ -40,7 +42,10 @@ export default async function SubjectsPage() {
                     )}
                   </div>
                 </div>
-                <AssignTeacherForm subjectId={s.id} teachers={teachers} currentTeacherId={s.teacher_id} />
+                <div className="flex flex-col items-end gap-2">
+                  <AssignTeacherForm subjectId={s.id} teachers={teachers} currentTeacherId={s.teacher_id} />
+                  <SetLevelForm subjectId={s.id} currentLevel={s.level} />
+                </div>
               </div>
             </Card>
           ))}
@@ -65,6 +70,18 @@ export default async function SubjectsPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Subject name</label>
                 <input name="name" required className={inputClass} placeholder="e.g. Mathematics Education" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Level</label>
+                <select name="level" required defaultValue="" className={inputClass}>
+                  <option value="" disabled>
+                    Select a level…
+                  </option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Code (optional)</label>

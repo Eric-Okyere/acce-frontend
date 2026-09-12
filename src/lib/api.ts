@@ -76,6 +76,7 @@ export function registerStudent(input: {
   confirmPassword: string;
   programId: string;
   indexNumber: string;
+  level: number;
   subjectIds: string[];
 }) {
   return request<{ token: string; user: UserRow }>("/auth/register-student", { method: "POST", body: input });
@@ -103,7 +104,9 @@ export function listSubjectsPublic(opts?: { programId?: string }) {
   const params = new URLSearchParams();
   if (opts?.programId) params.set("programId", opts.programId);
   const qs = params.toString();
-  return request<{ id: string; name: string; programId: string }[]>(`/subjects/public${qs ? `?${qs}` : ""}`);
+  return request<{ id: string; name: string; programId: string; level: number | null }[]>(
+    `/subjects/public${qs ? `?${qs}` : ""}`
+  );
 }
 export function listSubjects(token: string, opts?: { programId?: string; teacherId?: string }) {
   const params = new URLSearchParams();
@@ -114,12 +117,15 @@ export function listSubjects(token: string, opts?: { programId?: string; teacher
 }
 export function createSubject(
   token: string,
-  input: { programId: string; name: string; code?: string | null; teacherId?: string | null }
+  input: { programId: string; name: string; level: number; code?: string | null; teacherId?: string | null }
 ) {
   return request<SubjectRow>("/subjects", { method: "POST", token, body: input });
 }
 export function assignTeacher(token: string, subjectId: string, teacherId: string | null) {
   return request<SubjectRow>(`/subjects/${subjectId}/teacher`, { method: "PATCH", token, body: { teacherId } });
+}
+export function setSubjectLevel(token: string, subjectId: string, level: number) {
+  return request<SubjectRow>(`/subjects/${subjectId}/level`, { method: "PATCH", token, body: { level } });
 }
 export function setSubjectActive(token: string, subjectId: string, isActive: boolean) {
   return request<SubjectRow>(`/subjects/${subjectId}/active`, { method: "PATCH", token, body: { isActive } });
@@ -139,6 +145,7 @@ export function createUser(
     phone: string;
     programId?: string;
     indexNumber?: string;
+    level?: number | null;
     subjectIds?: string[];
   }
 ) {
@@ -154,7 +161,14 @@ export function setUserActive(token: string, userId: string, isActive: boolean) 
 export function updateUser(
   token: string,
   userId: string,
-  input: { name?: string; phone?: string; programId?: string; indexNumber?: string; subjectIds?: string[] }
+  input: {
+    name?: string;
+    phone?: string;
+    programId?: string;
+    indexNumber?: string;
+    level?: number | null;
+    subjectIds?: string[];
+  }
 ) {
   return request<{ user: UserRow }>(`/users/${userId}`, { method: "PATCH", token, body: input });
 }
@@ -167,6 +181,11 @@ export function deleteUser(token: string, userId: string) {
 // one course — see the route's comment in routes/users.js.
 export function updateMySubjects(token: string, subjectIds: string[]) {
   return request<{ user: UserRow }>("/users/me/subjects", { method: "PATCH", token, body: { subjectIds } });
+}
+// Self-service — a student picking/changing their own level (100-400), same
+// reasoning as updateMySubjects above.
+export function updateMyLevel(token: string, level: number) {
+  return request<{ user: UserRow }>("/users/me/level", { method: "PATCH", token, body: { level } });
 }
 export function resetUserPassword(token: string, userId: string) {
   return request<{ user: UserRow; tempPassword: string }>(`/users/${userId}/reset-password`, {
