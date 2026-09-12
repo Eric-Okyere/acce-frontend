@@ -46,7 +46,7 @@ export default async function StudentHomePage() {
         subtitle="Your lectures and attendance record."
         action={
           <Link href="/student/scan" className={buttonClass}>
-            📷 Scan to check in/out
+            📷 Scan to check in
           </Link>
         }
       />

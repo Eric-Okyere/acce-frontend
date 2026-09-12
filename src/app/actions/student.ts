@@ -96,26 +96,7 @@ export async function updateMyLevelAction(level: number): Promise<UpdateMyLevelR
   }
 }
 
-export async function checkOutAction(input: {
-  lectureId: string;
-  qrToken: string;
-  deviceId: string;
-  // Not required/checked for check-out — kept in the shape only because
-  // ScanInput is shared with check-in. Always pass "" here.
-  indexNumber: string;
-  lat: number;
-  lng: number;
-  accuracy: number | null;
-}): Promise<ScanActionResult> {
-  // STUDENT and COURSE_REP both check in to lectures the same way — see
-  // routes/attendance.js on the backend, which accepts both roles here too.
-  const { token } = await requireSessionWithToken(["STUDENT", "COURSE_REP"]);
-  try {
-    const result = await api.checkOut(token, input);
-    revalidatePath("/student");
-    revalidatePath("/rep");
-    return { success: result.success };
-  } catch (e) {
-    return { error: e instanceof ApiError ? e.message : "Something went wrong recording your check-out." };
-  }
-}
+// checkOutAction was removed — students must not check out (they need to
+// head straight to their next lecture), and check-in already marks them
+// present immediately. See routes/attendance.js's POST /check-out and
+// lib/api.ts for the backend/client side of this.

@@ -10,7 +10,7 @@ export default async function AuditPage() {
     <div>
       <PageHeader
         title="Audit log"
-        subtitle="Every login, check-in/out, and admin action — including the GPS distance recorded for each scan."
+        subtitle="Every login, check-in, and admin action — including the GPS distance recorded for each scan."
       />
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">

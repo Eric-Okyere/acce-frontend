@@ -65,3 +65,19 @@ export async function cancelLectureAction(lectureId: string): Promise<void> {
   revalidatePath("/admin");
   revalidatePath(`/admin/lectures/${lectureId}`);
 }
+
+// Ends an ongoing lecture early. Same sharing/ownership reasoning as
+// cancelLectureAction above — see routes/lectures.js's PATCH "/:id/end".
+export async function endLectureAction(lectureId: string): Promise<void> {
+  const { token } = await requireSessionWithToken(["COURSE_REP", "TEACHER", "ADMIN"]);
+  try {
+    await api.endLecture(token, lectureId);
+  } catch {
+    // Nothing to surface here — see the comment above.
+  }
+  revalidatePath("/rep");
+  revalidatePath(`/rep/lectures/${lectureId}`);
+  revalidatePath("/teacher");
+  revalidatePath("/admin");
+  revalidatePath(`/admin/lectures/${lectureId}`);
+}

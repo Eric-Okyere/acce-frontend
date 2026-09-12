@@ -277,14 +277,20 @@ export function cancelLecture(token: string, lectureId: string) {
   return request<LectureRow>(`/lectures/${lectureId}/cancel`, { method: "PATCH", token });
 }
 
+// Ends an ongoing lecture early — distinct from cancelling. See
+// routes/lectures.js's PATCH "/:id/end" for the per-role ownership rules.
+export function endLecture(token: string, lectureId: string) {
+  return request<LectureRow>(`/lectures/${lectureId}/end`, { method: "PATCH", token });
+}
+
 // ---- Attendance ----
 export interface ScanInput {
   lectureId: string;
   qrToken: string;
   deviceId: string;
-  // Required by the backend on check-in only (ignored on check-out) — the
-  // student re-types their own index number as an extra "prove it's you"
-  // step. See routes/attendance.js on the backend.
+  // Required by the backend on check-in — the student re-types their own
+  // index number as an extra "prove it's you" step. See routes/attendance.js
+  // on the backend.
   indexNumber: string;
   lat: number;
   lng: number;
@@ -293,9 +299,9 @@ export interface ScanInput {
 export function checkIn(token: string, input: ScanInput) {
   return request<{ success: string }>("/attendance/check-in", { method: "POST", token, body: input });
 }
-export function checkOut(token: string, input: ScanInput) {
-  return request<{ success: string }>("/attendance/check-out", { method: "POST", token, body: input });
-}
+// Checking out was removed — see routes/attendance.js's POST /check-out for
+// why (students need to head straight to their next lecture, and check-in
+// already marks them present immediately). No checkOut() here anymore.
 export function resolveScan(token: string, qrToken: string) {
   return request<{ error?: string; hallName?: string; candidates?: ScanCandidate[] }>("/attendance/resolve-scan", {
     method: "POST",

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   resolveScanAction,
   checkInAction,
-  checkOutAction,
   type ScanCandidate,
 } from "@/app/actions/student";
 import { Card, buttonClass, secondaryButtonClass, Badge } from "@/components/ui";
@@ -69,12 +68,12 @@ export default function ScannerClient({
   const [manualToken, setManualToken] = useState("");
   const [indexNumber, setIndexNumber] = useState("");
 
-  // The location used for check-in/out is now captured up front (and
-  // re-capturable on demand — see recaptureLocation below) rather than
-  // fetched silently inside handleAction — a GPS fix taken the moment the
-  // student walked in can be stale or just wrong by the time they actually
-  // tap Check in, and the old flow gave them no way to refresh it (or even
-  // see it) without a full failed submit round-trip against the backend.
+  // The location used for check-in is captured up front (and re-capturable
+  // on demand — see recaptureLocation below) rather than fetched silently
+  // inside handleCheckIn — a GPS fix taken the moment the student walked in
+  // can be stale or just wrong by the time they actually tap Check in, and
+  // the old flow gave them no way to refresh it (or even see it) without a
+  // full failed submit round-trip against the backend.
   const [location, setLocation] = useState<{ lat: number; lng: number; accuracy: number | null } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locatingManual, setLocatingManual] = useState(false);
@@ -198,7 +197,7 @@ export default function ScannerClient({
   }
 
   // Captures (or re-captures) the phone's current GPS position and stores it
-  // for the Check in/out buttons below to use. Called once automatically
+  // for the Check in button below to use. Called once automatically
   // above and also directly by the "Recapture location" button, so the
   // student can refresh a stale or inaccurate fix — e.g. after physically
   // moving closer to the hall, or after their first attempt failed with an
@@ -225,9 +224,12 @@ export default function ScannerClient({
     }
   }
 
-  async function handleAction(candidate: ScanCandidate, kind: "in" | "out") {
+  // Check-out was removed (students must not check out — they need to head
+  // straight to their next lecture, and checking in already marks them
+  // present immediately), so this only ever does one thing now: check in.
+  async function handleCheckIn(candidate: ScanCandidate) {
     if (!token) return;
-    if (kind === "in" && !indexNumber.trim()) {
+    if (!indexNumber.trim()) {
       setError("Enter your index number to check in.");
       return;
     }
@@ -241,12 +243,12 @@ export default function ScannerClient({
       lectureId: candidate.lectureId,
       qrToken: token,
       deviceId: getOrCreateDeviceId(),
-      indexNumber: kind === "in" ? indexNumber.trim() : "",
+      indexNumber: indexNumber.trim(),
       lat: location.lat,
       lng: location.lng,
       accuracy: location.accuracy,
     };
-    const result = kind === "in" ? await checkInAction(payload) : await checkOutAction(payload);
+    const result = await checkInAction(payload);
     if (result.error) {
       setError(result.error);
       setStage("picking");
@@ -274,7 +276,7 @@ export default function ScannerClient({
       {stage === "idle" && (
         <Card className="p-6 text-center">
           <p className="text-sm text-slate-600 mb-4">
-            Scan the QR code posted in your lecture hall to check in or out.
+            Scan the QR code posted in your lecture hall to check in.
           </p>
           <button onClick={startCamera} className={buttonClass}>
             📷 Start scanning
@@ -383,27 +385,17 @@ export default function ScannerClient({
                   </Badge>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  {!c.checkedIn && (
+                  {!c.checkedIn ? (
                     <button
                       disabled={stage === "submitting" || !indexNumber.trim() || !location}
-                      onClick={() => handleAction(c, "in")}
+                      onClick={() => handleCheckIn(c)}
                       className={`${buttonClass} flex-1`}
                     >
                       Check in
                     </button>
-                  )}
-                  {c.checkedIn && !c.checkedOut && (
-                    <button
-                      disabled={stage === "submitting" || !location}
-                      onClick={() => handleAction(c, "out")}
-                      className={`${buttonClass} flex-1`}
-                    >
-                      Check out
-                    </button>
-                  )}
-                  {c.checkedIn && c.checkedOut && (
+                  ) : (
                     <span className="flex-1 text-center text-sm text-emerald-700 py-2">
-                      ✓ Complete for this lecture
+                      ✓ You&apos;re checked in — head to your next lecture
                     </span>
                   )}
                 </div>

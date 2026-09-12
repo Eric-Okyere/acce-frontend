@@ -3,7 +3,7 @@ import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { ApiError } from "@/lib/api";
 import { lecturePhase } from "@/lib/lecturePhase";
-import { cancelLectureAction } from "@/app/actions/lectures";
+import { cancelLectureAction, endLectureAction } from "@/app/actions/lectures";
 import { Card, PageHeader, Badge, secondaryButtonClass } from "@/components/ui";
 
 const STATUS_TONE = { PRESENT: "green", INCOMPLETE: "amber", ABSENT: "red" } as const;
@@ -40,11 +40,23 @@ export default async function RepLectureDetailPage({ params }: { params: Promise
         ).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
         action={
           phase !== "ENDED" && phase !== "CANCELLED" ? (
-            <form action={cancelLectureAction.bind(null, id)}>
-              <button type="submit" className={`${secondaryButtonClass} text-red-600 border-red-200 hover:bg-red-50`}>
-                Cancel lecture
-              </button>
-            </form>
+            <div className="flex items-center gap-2">
+              {phase === "ONGOING" && (
+                <form action={endLectureAction.bind(null, id)}>
+                  <button
+                    type="submit"
+                    className={`${secondaryButtonClass} text-green-700 border-green-200 hover:bg-green-50`}
+                  >
+                    End lecture
+                  </button>
+                </form>
+              )}
+              <form action={cancelLectureAction.bind(null, id)}>
+                <button type="submit" className={`${secondaryButtonClass} text-red-600 border-red-200 hover:bg-red-50`}>
+                  Cancel lecture
+                </button>
+              </form>
+            </div>
           ) : undefined
         }
       />

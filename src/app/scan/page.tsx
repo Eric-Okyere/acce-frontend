@@ -42,7 +42,7 @@ export default async function ScanEntryPage({
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
       <PageHeader
-        title="Check in / check out"
+        title="Check in"
         subtitle="You must be physically inside the lecture hall — the QR code and your phone's location are both checked."
       />
       <ScannerClient initialToken={token} homeHref={roleHome(session.role)} />

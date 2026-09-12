@@ -88,7 +88,7 @@ export default async function RepDashboardPage() {
           subtitle="You're also expected in your program's lectures — check in the same way any student does."
           action={
             <Link href="/rep/scan" className={buttonClass}>
-              📷 Scan to check in/out
+              📷 Scan to check in
             </Link>
           }
         />
