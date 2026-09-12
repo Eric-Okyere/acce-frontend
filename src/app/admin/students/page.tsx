@@ -4,8 +4,14 @@ import { createStudentAction } from "@/app/actions/admin";
 import { ActionForm } from "@/components/ActionForm";
 import { Card, PageHeader, inputClass } from "@/components/ui";
 import StudentRow from "@/components/StudentRow";
+import LevelBreakdownTable from "@/components/LevelBreakdownTable";
+import { levelLabel, parseLevelKey } from "@/lib/levels";
 
-export default async function StudentsPage() {
+export default async function StudentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ level?: string }>;
+}) {
   const { token } = await requireSessionWithToken(["ADMIN"]);
   const [students, programs, subjects] = await Promise.all([
     api.listUsersByRole(token, "STUDENT"),
@@ -15,12 +21,30 @@ export default async function StudentsPage() {
   const devices = await Promise.all(students.map((s) => api.getStudentDevice(token, s.id)));
   const deviceByStudent = new Map(students.map((s, i) => [s.id, devices[i]]));
 
+  // "A level is selected and analysis is shown" — same ?level= link-based
+  // filter as the admin dashboard and teacher Students page.
+  const { level: levelParam } = await searchParams;
+  const selectedLevel = levelParam === undefined ? undefined : parseLevelKey(levelParam);
+  const filtering = selectedLevel !== undefined;
+  const filteredStudents = filtering ? students.filter((s) => s.level === selectedLevel) : students;
+
   return (
     <div>
       <PageHeader
         title="Students"
         subtitle="Every student is registered under a program and the course(s) they picked at sign-up. If a student's phone is lost or replaced, reset their device here so they can check in from the new one."
       />
+
+      <Card className="p-5 mb-6">
+        <h2 className="font-semibold text-slate-900 mb-3">
+          Students by level{filtering ? ` — ${levelLabel(selectedLevel!)}` : ""}
+        </h2>
+        <LevelBreakdownTable
+          linkBase="/admin/students"
+          selectedLevel={selectedLevel}
+          columns={[{ key: "students", label: "Students", items: students }]}
+        />
+      </Card>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -36,7 +60,7 @@ export default async function StudentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {students.map((s) => (
+                {filteredStudents.map((s) => (
                   <StudentRow
                     key={s.id}
                     student={s}
@@ -48,8 +72,10 @@ export default async function StudentsPage() {
                 ))}
               </tbody>
             </table>
-            {students.length === 0 && (
-              <p className="text-sm text-slate-500 px-4 py-6">No students registered yet.</p>
+            {filteredStudents.length === 0 && (
+              <p className="text-sm text-slate-500 px-4 py-6">
+                {filtering ? "No students at this level." : "No students registered yet."}
+              </p>
             )}
           </div>
         </div>

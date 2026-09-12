@@ -8,8 +8,14 @@ import SetIndexNumberButton from "@/components/SetIndexNumberButton";
 import AssignSubjectButton from "@/components/AssignSubjectButton";
 import DemoteToStudentButton from "@/components/DemoteToStudentButton";
 import PromoteCourseRepPanel from "@/components/PromoteCourseRepPanel";
+import LevelBreakdownTable from "@/components/LevelBreakdownTable";
+import { levelLabel, parseLevelKey } from "@/lib/levels";
 
-export default async function CourseRepsPage() {
+export default async function CourseRepsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ level?: string }>;
+}) {
   const { token } = await requireSessionWithToken(["ADMIN"]);
   const [reps, students, programs, subjects] = await Promise.all([
     api.listUsersByRole(token, "COURSE_REP"),
@@ -25,6 +31,13 @@ export default async function CourseRepsPage() {
   const programName = (id: string | null) => programs.find((p) => p.id === id)?.name ?? "—";
   const subjectName = (id: string) => subjects.find((s) => s.id === id)?.name ?? "—";
 
+  // "A level is selected and analysis is shown" — same ?level= link-based
+  // filter as the admin dashboard, Students page, and teacher Students page.
+  const { level: levelParam } = await searchParams;
+  const selectedLevel = levelParam === undefined ? undefined : parseLevelKey(levelParam);
+  const filtering = selectedLevel !== undefined;
+  const filteredReps = filtering ? reps.filter((r) => r.level === selectedLevel) : reps;
+
   return (
     <div>
       <PageHeader
@@ -32,9 +45,20 @@ export default async function CourseRepsPage() {
         subtitle="Course reps are promoted from existing student accounts and each schedule upcoming lectures for the subject(s) they're responsible for. Like any student, they also check in to attend lectures themselves."
       />
 
+      <Card className="p-5 mb-6">
+        <h2 className="font-semibold text-slate-900 mb-3">
+          Course reps by level{filtering ? ` — ${levelLabel(selectedLevel!)}` : ""}
+        </h2>
+        <LevelBreakdownTable
+          linkBase="/admin/course-reps"
+          selectedLevel={selectedLevel}
+          columns={[{ key: "courseReps", label: "Course reps", items: reps }]}
+        />
+      </Card>
+
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
-          {reps.map((r) => {
+          {filteredReps.map((r) => {
             const device = deviceByRep.get(r.id);
             const repProgramSubjects = subjects.filter((s) => s.program_id === r.program_id);
             return (
@@ -45,6 +69,13 @@ export default async function CourseRepsPage() {
                     <p className="text-sm text-slate-500">{r.phone}</p>
                     <div className="flex flex-wrap items-center gap-1 mt-2">
                       <Badge tone="blue">{programName(r.program_id)}</Badge>
+                      {r.level ? (
+                        <Badge tone="slate">Level {r.level}</Badge>
+                      ) : (
+                        <span className="text-xs text-slate-400" title="No level on file yet.">
+                          (no level)
+                        </span>
+                      )}
                       {r.responsible_subject_ids.length > 0 ? (
                         r.responsible_subject_ids.map((id) => (
                           <Badge key={id} tone="green">
@@ -99,7 +130,11 @@ export default async function CourseRepsPage() {
               </Card>
             );
           })}
-          {reps.length === 0 && <p className="text-sm text-slate-500">No course reps yet — promote a student below.</p>}
+          {filteredReps.length === 0 && (
+            <p className="text-sm text-slate-500">
+              {filtering ? "No course reps at this level." : "No course reps yet — promote a student below."}
+            </p>
+          )}
         </div>
 
         <Card className="p-5 h-fit">
