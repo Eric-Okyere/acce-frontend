@@ -6,6 +6,15 @@ export function lecturePhase(
   now: Date = new Date()
 ): LecturePhase {
   if (lecture.status === "CANCELLED") return "CANCELLED";
+  // A lecture manually ended early (routes/lectures.js's PATCH /:id/end —
+  // admin, teacher, or course rep) is ENDED from that moment on, regardless
+  // of its originally scheduled end_time, which is left untouched as a
+  // historical record of what was planned. Mirrors backend/src/lib/lecturePhase.js
+  // exactly — this check was missing here (v3.44 fix): the backend correctly
+  // set status to COMPLETED when "End" was clicked, but this frontend copy
+  // never looked at status for anything but CANCELLED, so it kept showing
+  // ONGOING (purely time-based) until the original end_time actually passed.
+  if (lecture.status === "COMPLETED") return "ENDED";
   const start = new Date(lecture.start_time);
   const end = new Date(lecture.end_time);
   if (now < start) return "UPCOMING";
