@@ -10,6 +10,12 @@ function str(fd: FormData, key: string): string {
   return String(fd.get(key) ?? "").trim();
 }
 
+// Lesson length is picked from a fixed set of hours (the lecturer decides
+// how long their own lecture runs) rather than typed as a raw end time —
+// see routes/lectures.js's POST "/", which is the actual enforcement of
+// this set; kept in sync by eye since it's a short, rarely-changed list.
+const VALID_DURATION_HOURS = [1, 2, 3, 4];
+
 // Shared by every role allowed to schedule a lecture — course reps (the
 // original use case), teachers (their own subjects), and admins (any
 // subject). See routes/lectures.js's POST "/" for the per-role subject
@@ -25,10 +31,13 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
   const lectureHallId = str(fd, "lectureHallId");
   const title = str(fd, "title");
   const startTime = str(fd, "startTime");
-  const endTime = str(fd, "endTime");
+  const durationHours = Number(str(fd, "durationHours"));
 
-  if (!subjectId || !lectureHallId || !startTime || !endTime) {
-    return { error: "Subject, hall, start time, and end time are all required." };
+  if (!subjectId || !lectureHallId || !startTime || !durationHours) {
+    return { error: "Subject, hall, start time, and lesson duration are all required." };
+  }
+  if (!VALID_DURATION_HOURS.includes(durationHours)) {
+    return { error: "Lesson duration must be 1, 2, 3, or 4 hours." };
   }
 
   try {
@@ -37,7 +46,7 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
       lectureHallId,
       title: title || undefined,
       startTime: new Date(startTime).toISOString(),
-      endTime: new Date(endTime).toISOString(),
+      durationHours,
     });
     revalidatePath("/rep");
     revalidatePath("/teacher");

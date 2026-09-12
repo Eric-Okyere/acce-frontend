@@ -325,9 +325,14 @@ export async function toggleUserActiveAction(userId: string, isActive: boolean, 
 
 // path defaults to /admin/students for backwards compatibility with existing
 // callers; the course-reps admin page (whose reps now also have a device
-// binding, since they check in the same way a student does) passes its own.
+// binding, since they check in the same way a student does) passes its own,
+// as does the teacher students page. TEACHER is allowed here too — the
+// backend (routes/devices.js) is the actual enforcement of "only a student
+// offering a course this teacher teaches," so a teacher hitting this for
+// someone outside their own roster gets a 403 from the API, surfaced as a
+// thrown ApiError the caller can catch.
 export async function resetDeviceAction(studentId: string, path: string = "/admin/students"): Promise<void> {
-  const { token } = await requireSessionWithToken(["ADMIN"]);
+  const { token } = await requireSessionWithToken(["ADMIN", "TEACHER"]);
   await api.resetDevice(token, studentId);
   revalidatePath(path);
 }
@@ -335,12 +340,16 @@ export async function resetDeviceAction(studentId: string, path: string = "/admi
 // Issues a fresh temporary password for a teacher / course rep / student and
 // hands it straight back to the admin UI to display — see the comment on the
 // backend route (routes/users.js, PATCH /:id/reset-password) for why this
-// always issues a new one rather than revealing the original.
+// always issues a new one rather than revealing the original. TEACHER is
+// also allowed here (same as resetDeviceAction above) — the backend is the
+// actual enforcement of "only a student offering a course this teacher
+// teaches," surfaced to the caller as the returned `error` if it doesn't
+// apply.
 export async function resetUserPasswordAction(
   userId: string,
   path: string
 ): Promise<{ tempPassword?: string; error?: string }> {
-  const { token } = await requireSessionWithToken(["ADMIN"]);
+  const { token } = await requireSessionWithToken(["ADMIN", "TEACHER"]);
   try {
     const { tempPassword } = await api.resetUserPassword(token, userId);
     revalidatePath(path);

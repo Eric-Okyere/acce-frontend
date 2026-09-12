@@ -10,9 +10,22 @@ import { secondaryButtonClass, buttonClass } from "@/components/ui";
 // stored server-side (there's no "always show it" option — a stored
 // password would mean every account is exposed in plain text the moment the
 // database ever leaks, not just this one credential). Used on the Course
-// reps, Teachers, and Students admin pages wherever an admin needs to hand
-// someone their login code — Copy and "Text it" below make that a single tap
-// once it's generated.
+// reps, Teachers, and Students admin pages, and now the teacher Students
+// page too (routes/users.js's PATCH /:id/reset-password accepts TEACHER as
+// well as ADMIN, scoped to their own students), wherever someone needs to
+// hand a person their login code — Copy, "Text it," and WhatsApp below make
+// that a single tap once it's generated, so a student who forgot their
+// password can be sent a fresh one immediately.
+function toWhatsAppDigits(phone: string): string {
+  // Ghana-specific, mirrors backend/src/lib/phone.js's normalizePhone in
+  // reverse: stored numbers are local ("0XXXXXXXXX"); wa.me needs the full
+  // international number with no leading 0 ("233XXXXXXXXX").
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("233")) return digits;
+  if (digits.startsWith("0")) return `233${digits.slice(1)}`;
+  return digits;
+}
+
 export default function ResetPasswordButton({
   userId,
   userName,
@@ -83,6 +96,14 @@ export default function ResetPasswordButton({
               className={`${secondaryButtonClass} !py-1 !px-2 !text-xs no-underline`}
             >
               Text it
+            </a>
+            <a
+              href={`https://wa.me/${toWhatsAppDigits(userPhone)}?text=${encodeURIComponent(message)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${secondaryButtonClass} !py-1 !px-2 !text-xs no-underline !text-emerald-700 !border-emerald-300`}
+            >
+              WhatsApp
             </a>
             <button type="button" className="underline text-emerald-700" onClick={() => setResult(null)}>
               Dismiss

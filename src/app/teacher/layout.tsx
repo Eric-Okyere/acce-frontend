@@ -9,6 +9,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const navItems = [
     { href: "/teacher", label: "Overview" },
     { href: "/teacher/lectures", label: "Lectures" },
+    { href: "/teacher/students", label: "Students" },
     ...subjects.map((s) => ({ href: `/teacher/subjects/${s.id}`, label: s.name })),
   ];
 

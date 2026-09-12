@@ -20,7 +20,7 @@ export default async function NewAdminLecturePage() {
     <div className="max-w-lg">
       <PageHeader
         title="Schedule a lecture"
-        subtitle="Students can check in from up to 2 hours before start, and must check out right at the end time."
+        subtitle="Students can check in from up to 2 hours before start."
       />
 
       <Card className="p-5">
@@ -71,8 +71,13 @@ export default async function NewAdminLecturePage() {
                   <input name="startTime" type="datetime-local" required className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">End time</label>
-                  <input name="endTime" type="datetime-local" required className={inputClass} />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Lesson hours</label>
+                  <select name="durationHours" required defaultValue="1" className={inputClass}>
+                    <option value="1">1 hour</option>
+                    <option value="2">2 hours</option>
+                    <option value="3">3 hours</option>
+                    <option value="4">4 hours</option>
+                  </select>
                 </div>
               </div>
             </div>

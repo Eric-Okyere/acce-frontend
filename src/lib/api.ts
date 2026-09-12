@@ -115,6 +115,13 @@ export function listSubjects(token: string, opts?: { programId?: string; teacher
   const qs = params.toString();
   return request<SubjectRow[]>(`/subjects${qs ? `?${qs}` : ""}`, { token });
 }
+// Every student/course-rep offering this subject — an admin can call this
+// for any subject, a teacher only for one they teach (routes/subjects.js
+// enforces the restriction; see lib/enrollment.js's getSubjectRoster for
+// what "offering" means).
+export function listSubjectStudents(token: string, subjectId: string) {
+  return request<UserRow[]>(`/subjects/${subjectId}/students`, { token });
+}
 export function createSubject(
   token: string,
   input: { programId: string; name: string; level: number; code?: string | null; teacherId?: string | null }
@@ -269,7 +276,7 @@ export function getLectureRoster(token: string, lectureId: string) {
 }
 export function createLecture(
   token: string,
-  input: { subjectId: string; lectureHallId: string; title?: string; startTime: string; endTime: string }
+  input: { subjectId: string; lectureHallId: string; title?: string; startTime: string; durationHours: number }
 ) {
   return request<LectureRow>("/lectures", { method: "POST", token, body: input });
 }
