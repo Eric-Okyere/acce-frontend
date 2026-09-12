@@ -218,7 +218,7 @@ export default function StudentRow({
                 Cancel
               </button>
               <div className="ml-auto">
-                <DeleteStudentButton userId={student.id} userName={student.name} path={path} />
+                <DeleteStudentButton userId={student.id} userName={student.name} level={student.level} path={path} />
               </div>
             </div>
             {error && <p className="text-xs text-red-600 mt-2">{error}</p>}

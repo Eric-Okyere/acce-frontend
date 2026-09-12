@@ -10,25 +10,39 @@ import { secondaryButtonClass } from "@/components/ui";
 // then again by requiring the admin to re-type the student's name — the same
 // friction pattern as most "delete account" flows, since this one action
 // can't be walked back the way deactivating a student can.
+//
+// Deleting a student is gated to level 400 (completed their program) —
+// enforced server-side (routes/users.js's DELETE /:id is the source of
+// truth), but reflected here too so the admin sees why up front instead of
+// clicking through the confirm flow only to hit an error.
 export default function DeleteStudentButton({
   userId,
   userName,
+  level,
   path,
 }: {
   userId: string;
   userName: string;
+  level: number | null;
   path: string;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const completed = level === 400;
 
   if (!confirming) {
     return (
       <button
         type="button"
-        className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs !text-red-600 !border-red-200 hover:!bg-red-50`}
+        disabled={!completed}
+        title={
+          completed
+            ? undefined
+            : `${userName} hasn't completed their program yet (${level ? `currently level ${level}` : "no level on file"}) — only students at level 400 can be deleted. Deactivate them instead if needed now.`
+        }
+        className={`${secondaryButtonClass} !py-1.5 !px-3 text-xs !text-red-600 !border-red-200 hover:!bg-red-50 disabled:!text-slate-400 disabled:!border-slate-200 disabled:hover:!bg-transparent`}
         onClick={() => setConfirming(true)}
       >
         Delete

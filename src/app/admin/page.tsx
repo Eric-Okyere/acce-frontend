@@ -15,6 +15,14 @@ export default async function AdminDashboardPage() {
     api.listRecentAudit(token, 8),
   ]);
 
+  // A course rep IS a student (promoted from one, still attends/checks in
+  // like one — see lib/enrollment.js) — just with added scheduling
+  // responsibility for their assigned subject(s). "Students" on this
+  // dashboard is a headcount of everyone who's a student in that sense, so
+  // it adds the two roles together rather than only counting plain STUDENT
+  // accounts. The Course reps tile stays alongside it as its own breakdown.
+  const totalStudents = students.length + reps.length;
+
   return (
     <div>
       <PageHeader
@@ -27,7 +35,7 @@ export default async function AdminDashboardPage() {
         <StatTile label="Subjects" value={subjects.length} />
         <StatTile label="Teachers" value={teachers.length} />
         <StatTile label="Course reps" value={reps.length} />
-        <StatTile label="Students" value={students.length} />
+        <StatTile label="Students" value={totalStudents} hint="Includes course reps" />
         <StatTile label="Lecture halls" value={halls.length} />
       </div>
 
@@ -56,7 +64,7 @@ export default async function AdminDashboardPage() {
               href="/admin/course-reps"
               label="At least one course rep registered"
             />
-            <ChecklistItem done={students.length > 0} href="/admin/students" label="Students registered" />
+            <ChecklistItem done={totalStudents > 0} href="/admin/students" label="Students registered" />
           </ol>
         </Card>
 
