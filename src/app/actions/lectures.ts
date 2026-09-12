@@ -10,12 +10,6 @@ function str(fd: FormData, key: string): string {
   return String(fd.get(key) ?? "").trim();
 }
 
-// Lesson length is picked from a fixed set of hours (the lecturer decides
-// how long their own lecture runs) rather than typed as a raw end time —
-// see routes/lectures.js's POST "/", which is the actual enforcement of
-// this set; kept in sync by eye since it's a short, rarely-changed list.
-const VALID_DURATION_HOURS = [1, 2, 3, 4];
-
 // Shared by every role allowed to schedule a lecture — course reps (the
 // original use case), teachers (their own subjects), and admins (any
 // subject). See routes/lectures.js's POST "/" for the per-role subject
@@ -31,13 +25,18 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
   const lectureHallId = str(fd, "lectureHallId");
   const title = str(fd, "title");
   const startTime = str(fd, "startTime");
-  const durationHours = Number(str(fd, "durationHours"));
+  const endTime = str(fd, "endTime");
 
-  if (!subjectId || !lectureHallId || !startTime || !durationHours) {
-    return { error: "Course, hall, start time, and lesson duration are all required." };
+  if (!subjectId || !lectureHallId || !startTime || !endTime) {
+    return { error: "Course, hall, start time, and end time are all required." };
   }
-  if (!VALID_DURATION_HOURS.includes(durationHours)) {
-    return { error: "Lesson duration must be 1, 2, 3, or 4 hours." };
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return { error: "Start time and end time must both be valid." };
+  }
+  if (end.getTime() <= start.getTime()) {
+    return { error: "End time must be after the start time." };
   }
 
   try {
@@ -45,8 +44,8 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
       subjectId,
       lectureHallId,
       title: title || undefined,
-      startTime: new Date(startTime).toISOString(),
-      durationHours,
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
     });
     revalidatePath("/rep");
     revalidatePath("/teacher");

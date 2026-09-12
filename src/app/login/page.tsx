@@ -1,12 +1,32 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { roleHome } from "@/lib/guard";
 import LoginForm from "./LoginForm";
+
+// Always render fresh, per request — this page must never be served from
+// the browser's back/forward cache, or someone who's already signed in
+// could land back on the login form via the Back button without the
+// already-signed-in check below ever running. See the redirect just below.
+export const dynamic = "force-dynamic";
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
+  // "Prevent navigation to login page except logout" — if there's already a
+  // valid session (e.g. someone hits the Back button after signing in, or
+  // the /login URL directly while still logged in), bounce them straight to
+  // their own dashboard instead of showing the form again. This is the ONLY
+  // gate needed: the sole other way to legitimately reach /login while
+  // logged in is via Sign out (Nav.tsx's logoutAction, which clears the
+  // session cookie first — see lib/auth.ts's clearSessionCookie), so by the
+  // time that lands here there's no session left to redirect away from.
+  const session = await getSession();
+  if (session) redirect(roleHome(session.role));
+
   // Set by app/scan/page.tsx when someone reaches a hall's QR link without
   // an existing session — LoginForm carries this through as a hidden field
   // so loginAction can send them straight back to the check-in form instead

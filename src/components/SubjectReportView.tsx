@@ -324,8 +324,25 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
 // above, which is the only caller — so the downloaded file always matches
 // exactly what's on screen (and in the level <select>) at the time it's
 // clicked, per "CSV must also be exported according to levels."
+//
+// The trailing "CA Mark" column is deliberately left BLANK on every row —
+// this app has no Continuous Assessment feature (no field, no form, no
+// storage for a mark) — it's there so a teacher can open the exported,
+// per-level file in Excel/Sheets at the end of term and type each
+// student's CA mark straight into that column next to their name/index
+// number, one export per level/class rather than one long combined list.
 function toCsv(students: StudentStat[]): string {
-  const header = ["Student", "Index Number", "Level", "Present", "Incomplete", "Absent", "Total Lectures", "Rate (%)"];
+  const header = [
+    "Student",
+    "Index Number",
+    "Level",
+    "Present",
+    "Incomplete",
+    "Absent",
+    "Total Lectures",
+    "Rate (%)",
+    "CA Mark",
+  ];
   const rows = students.map((s) => [
     s.name,
     s.indexNumber ?? "",
@@ -335,6 +352,7 @@ function toCsv(students: StudentStat[]): string {
     s.absent,
     s.totalLectures,
     s.rate,
+    "",
   ]);
   return [header, ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
 }
