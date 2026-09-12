@@ -3,7 +3,7 @@ import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { ApiError } from "@/lib/api";
 import { lecturePhase } from "@/lib/lecturePhase";
-import { cancelLectureAction } from "@/app/actions/rep";
+import { cancelLectureAction } from "@/app/actions/lectures";
 import { Card, PageHeader, Badge, secondaryButtonClass } from "@/components/ui";
 
 const STATUS_TONE = { PRESENT: "green", INCOMPLETE: "amber", ABSENT: "red" } as const;
