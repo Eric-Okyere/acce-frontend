@@ -4,7 +4,7 @@ import Nav from "@/components/Nav";
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/programs", label: "Programs" },
-  { href: "/admin/subjects", label: "Subjects" },
+  { href: "/admin/subjects", label: "Courses" },
   { href: "/admin/teachers", label: "Teachers" },
   { href: "/admin/course-reps", label: "Course reps" },
   { href: "/admin/students", label: "Students" },

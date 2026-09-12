@@ -16,7 +16,7 @@ export default async function TeachersPage() {
     <div>
       <PageHeader
         title="Teachers"
-        subtitle="Register a teacher with their name and phone number, then assign them to subjects."
+        subtitle="Register a teacher with their name and phone number, then assign them to courses."
       />
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -33,7 +33,7 @@ export default async function TeachersPage() {
                       {subs.length > 0 ? (
                         subs.map((s) => <Badge key={s.id}>{s.name}</Badge>)
                       ) : (
-                        <span className="text-xs text-slate-400">No subjects assigned yet</span>
+                        <span className="text-xs text-slate-400">No courses assigned yet</span>
                       )}
                       {!t.is_active && <Badge tone="red">Deactivated</Badge>}
                     </div>

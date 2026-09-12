@@ -101,7 +101,7 @@ export default async function StudentHomePage() {
                 <Card key={lecture.id} className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-slate-900">{subject?.name ?? "Subject"}</p>
+                      <p className="font-medium text-slate-900">{subject?.name ?? "Course"}</p>
                       <p className="text-xs text-slate-500 mt-0.5">
                         {hall?.name} ·{" "}
                         {new Date(lecture.start_time).toLocaleString(undefined, {

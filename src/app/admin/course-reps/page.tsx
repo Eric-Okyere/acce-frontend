@@ -42,7 +42,7 @@ export default async function CourseRepsPage({
     <div>
       <PageHeader
         title="Course reps"
-        subtitle="Course reps are promoted from existing student accounts and each schedule upcoming lectures for the subject(s) they're responsible for. Like any student, they also check in to attend lectures themselves."
+        subtitle="Course reps are promoted from existing student accounts and each schedule upcoming lectures for the course(s) they're responsible for. Like any student, they also check in to attend lectures themselves."
       />
 
       <Card className="p-5 mb-6">
@@ -83,7 +83,7 @@ export default async function CourseRepsPage({
                           </Badge>
                         ))
                       ) : (
-                        <Badge tone="amber">No subject assigned yet</Badge>
+                        <Badge tone="amber">No course assigned yet</Badge>
                       )}
                       {!r.is_active && <Badge tone="red">Deactivated</Badge>}
                       {device?.device_id ? (
@@ -103,7 +103,7 @@ export default async function CourseRepsPage({
                       />
                     </div>
                     <div className="mt-2">
-                      <span className="text-xs text-slate-400 block mb-1">Assigned subject(s):</span>
+                      <span className="text-xs text-slate-400 block mb-1">Assigned course(s):</span>
                       <AssignSubjectButton
                         userId={r.id}
                         subjects={repProgramSubjects.map((s) => ({ id: s.id, name: s.name }))}

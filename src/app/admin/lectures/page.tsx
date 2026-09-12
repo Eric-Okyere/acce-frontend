@@ -34,7 +34,7 @@ export default async function AdminLecturesPage() {
     <div>
       <PageHeader
         title="Your lectures"
-        subtitle="Lectures you've scheduled yourself, for any subject."
+        subtitle="Lectures you've scheduled yourself, for any course."
         action={
           <Link href="/admin/lectures/new" className={buttonClass}>
             + Schedule lecture
@@ -53,7 +53,7 @@ export default async function AdminLecturesPage() {
             <Card key={lec.id} className="p-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <h3 className="font-medium text-slate-900">{subject?.name ?? "Unknown subject"}</h3>
+                  <h3 className="font-medium text-slate-900">{subject?.name ?? "Unknown course"}</h3>
                   <p className="text-sm text-slate-500">
                     {hall?.name ?? "Unknown hall"} ·{" "}
                     {new Date(lec.start_time).toLocaleString(undefined, {

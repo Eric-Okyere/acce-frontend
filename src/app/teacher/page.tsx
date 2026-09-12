@@ -14,7 +14,7 @@ export default async function TeacherOverviewPage() {
 
   return (
     <div>
-      <PageHeader title="Your subjects" subtitle="Pick a subject to see its attendance dashboard." />
+      <PageHeader title="Your courses" subtitle="Pick a course to see its attendance dashboard." />
       {subjects.length === 0 ? (
         <p className="text-sm text-slate-500">
           You haven&apos;t been assigned to any subjects yet — ask an admin to assign you to one.

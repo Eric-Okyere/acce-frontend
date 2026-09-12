@@ -78,7 +78,7 @@ export default async function TeacherStudentsPage({
     <div>
       <PageHeader
         title="Students"
-        subtitle="Everyone offering one of your subjects. Reset a forgotten password (and send the new code straight to their WhatsApp or phone) or, if a phone was lost, damaged, or replaced, reset their device here so they can check in from the new one."
+        subtitle="Everyone offering one of your courses. Reset a forgotten password (and send the new code straight to their WhatsApp or phone) or, if a phone was lost, damaged, or replaced, reset their device here so they can check in from the new one."
       />
 
       {subjects.length === 0 ? (
@@ -169,8 +169,8 @@ export default async function TeacherStudentsPage({
           {filteredStudents.length === 0 && (
             <p className="text-sm text-slate-500 px-4 py-6">
               {filtering
-                ? "No students at this level are offering your subject(s)."
-                : "No students are offering your subject(s) yet."}
+                ? "No students at this level are offering your course(s)."
+                : "No students are offering your course(s) yet."}
             </p>
           )}
         </div>

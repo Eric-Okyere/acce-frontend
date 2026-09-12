@@ -58,12 +58,12 @@ export default function PromoteCourseRepPanel({
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Responsible subject(s)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Responsible course(s)</label>
           {!selectedStudent ? (
             <p className="text-xs text-slate-400">Pick a student first…</p>
           ) : availableSubjects.length === 0 ? (
             <p className="text-xs text-amber-700">
-              No subjects exist for this student&apos;s program yet — create one on the Subjects page first.
+              No courses exist for this student&apos;s program yet — create one on the Courses page first.
             </p>
           ) : (
             <div className="flex flex-col gap-1.5">

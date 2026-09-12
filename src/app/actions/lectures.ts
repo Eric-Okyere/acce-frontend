@@ -34,7 +34,7 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
   const durationHours = Number(str(fd, "durationHours"));
 
   if (!subjectId || !lectureHallId || !startTime || !durationHours) {
-    return { error: "Subject, hall, start time, and lesson duration are all required." };
+    return { error: "Course, hall, start time, and lesson duration are all required." };
   }
   if (!VALID_DURATION_HOURS.includes(durationHours)) {
     return { error: "Lesson duration must be 1, 2, 3, or 4 hours." };

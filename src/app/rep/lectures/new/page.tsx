@@ -27,18 +27,18 @@ export default async function NewLecturePage() {
       <Card className="p-5">
         {rep.responsible_subject_ids.length === 0 ? (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            You haven&apos;t been assigned a subject yet — ask an admin to assign you one before you can schedule
+            You haven&apos;t been assigned a course yet — ask an admin to assign you one before you can schedule
             lectures.
           </p>
         ) : responsibleSubjects.length === 0 ? (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Your assigned subject(s) could not be found — ask an admin to check your subject assignment.
+            Your assigned course(s) could not be found — ask an admin to check your course assignment.
           </p>
         ) : (
           <ActionForm action={createLectureAction} submitLabel="Schedule lecture">
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Course</label>
                 {responsibleSubjects.length === 1 ? (
                   <>
                     <input type="hidden" name="subjectId" value={responsibleSubjects[0].id} />
@@ -46,7 +46,7 @@ export default async function NewLecturePage() {
                   </>
                 ) : (
                   <select name="subjectId" required className={inputClass}>
-                    <option value="">Select a subject…</option>
+                    <option value="">Select a course…</option>
                     {responsibleSubjects.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -54,7 +54,7 @@ export default async function NewLecturePage() {
                     ))}
                   </select>
                 )}
-                <p className="text-xs text-slate-400 mt-1">You can only schedule lectures for a subject you&apos;re responsible for.</p>
+                <p className="text-xs text-slate-400 mt-1">You can only schedule lectures for a course you&apos;re responsible for.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Lecture hall</label>

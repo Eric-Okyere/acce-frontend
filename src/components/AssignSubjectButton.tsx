@@ -37,7 +37,7 @@ export default function AssignSubjectButton({
   return (
     <div className="flex flex-col gap-2">
       {subjects.length === 0 ? (
-        <p className="text-xs text-slate-400">No subjects in this program yet.</p>
+        <p className="text-xs text-slate-400">No courses in this program yet.</p>
       ) : (
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {subjects.map((s) => (

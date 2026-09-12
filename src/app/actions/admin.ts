@@ -36,19 +36,19 @@ export async function createSubjectAction(_prev: FormState, fd: FormData): Promi
   const code = str(fd, "code");
   const teacherId = str(fd, "teacherId");
   const level = Number(str(fd, "level"));
-  if (!programId || !name) return { error: "Program and subject name are required." };
+  if (!programId || !name) return { error: "Program and course name are required." };
   if (!VALID_LEVELS.includes(level)) return { error: "Choose a level for this course — 100, 200, 300 or 400." };
 
   try {
     const subject = await api.createSubject(token, { programId, name, level, code: code || null, teacherId: teacherId || null });
     revalidatePath("/admin/subjects");
-    return { success: `Subject "${subject.name}" created.` };
+    return { success: `Course "${subject.name}" created.` };
   } catch (e) {
     return {
       error:
         e instanceof ApiError
           ? e.message
-          : "Could not create subject (a subject with this name may already exist in the program).",
+          : "Could not create course (a course with this name may already exist in the program).",
     };
   }
 }
@@ -57,7 +57,7 @@ export async function assignTeacherAction(_prev: FormState, fd: FormData): Promi
   const { token } = await requireSessionWithToken(["ADMIN"]);
   const subjectId = str(fd, "subjectId");
   const teacherId = str(fd, "teacherId");
-  if (!subjectId) return { error: "Missing subject." };
+  if (!subjectId) return { error: "Missing course." };
 
   try {
     await api.assignTeacher(token, subjectId, teacherId || null);
@@ -72,7 +72,7 @@ export async function setSubjectLevelAction(_prev: FormState, fd: FormData): Pro
   const { token } = await requireSessionWithToken(["ADMIN"]);
   const subjectId = str(fd, "subjectId");
   const level = Number(str(fd, "level"));
-  if (!subjectId) return { error: "Missing subject." };
+  if (!subjectId) return { error: "Missing course." };
   if (!VALID_LEVELS.includes(level)) return { error: "Choose a level — 100, 200, 300 or 400." };
 
   try {
@@ -111,7 +111,7 @@ export async function promoteCourseRepAction(_prev: FormState, fd: FormData): Pr
   const studentId = str(fd, "studentId");
   const subjectIds = fd.getAll("subjectIds").map(String).filter(Boolean);
   if (!studentId || subjectIds.length === 0) {
-    return { error: "Pick the student and at least one subject they'll be responsible for." };
+    return { error: "Pick the student and at least one course they'll be responsible for." };
   }
 
   try {
@@ -134,13 +134,13 @@ export async function reassignCourseRepSubjectsAction(
   path: string
 ): Promise<{ error?: string; success?: boolean }> {
   const { token } = await requireSessionWithToken(["ADMIN"]);
-  if (subjectIds.length === 0) return { error: "Pick at least one subject." };
+  if (subjectIds.length === 0) return { error: "Pick at least one course." };
   try {
     await api.promoteToCourseRep(token, userId, subjectIds);
     revalidatePath(path);
     return { success: true };
   } catch (e) {
-    return { error: e instanceof ApiError ? e.message : "Could not update this course rep's assigned subjects." };
+    return { error: e instanceof ApiError ? e.message : "Could not update this course rep's assigned courses." };
   }
 }
 

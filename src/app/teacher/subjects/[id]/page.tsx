@@ -21,7 +21,7 @@ export default async function TeacherSubjectPage({ params }: { params: Promise<{
 
   return (
     <div>
-      <PageHeader title={report.subjectName} subtitle="Attendance dashboard for your subject only." />
+      <PageHeader title={report.subjectName} subtitle="Attendance dashboard for your course only." />
       <SubjectReportView report={report} />
     </div>
   );

@@ -54,7 +54,7 @@ export default async function RepDashboardPage() {
               <Card className="p-4 hover:border-blue-300 transition">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <h3 className="font-medium text-slate-900">{subject?.name ?? "Unknown subject"}</h3>
+                    <h3 className="font-medium text-slate-900">{subject?.name ?? "Unknown course"}</h3>
                     <p className="text-sm text-slate-500">
                       {hall?.name ?? "Unknown hall"} ·{" "}
                       {new Date(lec.start_time).toLocaleString(undefined, {
@@ -113,7 +113,7 @@ export default async function RepDashboardPage() {
                   <Card key={lecture.id} className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium text-slate-900">{subject?.name ?? "Subject"}</p>
+                        <p className="font-medium text-slate-900">{subject?.name ?? "Course"}</p>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {hall?.name} ·{" "}
                           {new Date(lecture.start_time).toLocaleString(undefined, {

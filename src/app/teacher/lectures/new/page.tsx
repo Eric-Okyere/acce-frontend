@@ -27,14 +27,14 @@ export default async function NewTeacherLecturePage() {
       <Card className="p-5">
         {subjects.length === 0 ? (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            You haven&apos;t been assigned to any subjects yet — ask an admin to assign you to one before you can
+            You haven&apos;t been assigned to any courses yet — ask an admin to assign you to one before you can
             schedule lectures.
           </p>
         ) : (
           <ActionForm action={createLectureAction} submitLabel="Schedule lecture">
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Course</label>
                 {subjects.length === 1 ? (
                   <>
                     <input type="hidden" name="subjectId" value={subjects[0].id} />
@@ -42,7 +42,7 @@ export default async function NewTeacherLecturePage() {
                   </>
                 ) : (
                   <select name="subjectId" required className={inputClass}>
-                    <option value="">Select a subject…</option>
+                    <option value="">Select a course…</option>
                     {subjects.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -50,7 +50,7 @@ export default async function NewTeacherLecturePage() {
                     ))}
                   </select>
                 )}
-                <p className="text-xs text-slate-400 mt-1">You can only schedule lectures for a subject you teach.</p>
+                <p className="text-xs text-slate-400 mt-1">You can only schedule lectures for a course you teach.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Lecture hall</label>

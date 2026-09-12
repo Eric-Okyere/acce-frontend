@@ -59,7 +59,7 @@ export default async function AdminDashboardPage({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <StatTile label="Programs" value={programs.length} hint={filtering ? "School-wide" : undefined} />
-        <StatTile label="Subjects" value={subjectsAtLevel.length} />
+        <StatTile label="Courses" value={subjectsAtLevel.length} />
         <StatTile label="Teachers" value={teachersAtLevel.length} />
         <StatTile label="Course reps" value={repsAtLevel.length} />
         <StatTile label="Students" value={totalStudentsAtLevel} hint="Includes course reps" />
@@ -85,7 +85,7 @@ export default async function AdminDashboardPage({
           linkBase="/admin"
           selectedLevel={selectedLevel}
           columns={[
-            { key: "subjects", label: "Subjects", items: subjects },
+            { key: "subjects", label: "Courses", items: subjects },
             { key: "students", label: "Students", items: [...students, ...reps] },
             { key: "courseReps", label: "Course reps", items: reps },
           ]}
@@ -115,7 +115,7 @@ export default async function AdminDashboardPage({
             <ChecklistItem
               done={subjects.length > 0}
               href="/admin/subjects"
-              label="At least one subject created and assigned to a teacher"
+              label="At least one course created and assigned to a teacher"
             />
             <ChecklistItem
               done={reps.length > 0}

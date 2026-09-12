@@ -17,10 +17,10 @@ export default async function AdminReportsPage({
 
   return (
     <div>
-      <PageHeader title="Reports" subtitle="Attendance analytics across every subject." />
+      <PageHeader title="Reports" subtitle="Attendance analytics across every course." />
 
       {subjects.length === 0 ? (
-        <p className="text-sm text-slate-500">No subjects yet — create one first.</p>
+        <p className="text-sm text-slate-500">No courses yet — create one first.</p>
       ) : (
         <>
           <div className="flex flex-wrap gap-2 mb-6">
