@@ -49,7 +49,9 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
     });
     revalidatePath("/rep");
     revalidatePath("/teacher");
+    revalidatePath("/teacher/lectures");
     revalidatePath("/admin");
+    revalidatePath("/admin/lectures");
     return { success: "Lecture scheduled. Students can check in up to 2 hours before it starts." };
   } catch (e) {
     return { error: e instanceof ApiError ? e.message : "Could not schedule the lecture." };
@@ -70,8 +72,9 @@ export async function cancelLectureAction(lectureId: string): Promise<void> {
   revalidatePath("/rep");
   revalidatePath(`/rep/lectures/${lectureId}`);
   revalidatePath("/teacher");
+  revalidatePath("/teacher/lectures");
   revalidatePath("/admin");
-  revalidatePath(`/admin/lectures/${lectureId}`);
+  revalidatePath("/admin/lectures");
 }
 
 // Ends an ongoing lecture early. Same sharing/ownership reasoning as
@@ -86,6 +89,7 @@ export async function endLectureAction(lectureId: string): Promise<void> {
   revalidatePath("/rep");
   revalidatePath(`/rep/lectures/${lectureId}`);
   revalidatePath("/teacher");
+  revalidatePath("/teacher/lectures");
   revalidatePath("/admin");
-  revalidatePath(`/admin/lectures/${lectureId}`);
+  revalidatePath("/admin/lectures");
 }
