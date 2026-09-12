@@ -16,8 +16,11 @@ import {
 import type { SubjectReport, StudentStat } from "@/lib/types";
 import { Card, StatTile, Badge } from "@/components/ui";
 import { AT_RISK_THRESHOLD } from "@/lib/constants";
-import { groupByLevel } from "@/lib/levels";
+import { groupByLevel, levelKey, levelLabel, parseLevelKey } from "@/lib/levels";
 import LevelBreakdown from "@/components/LevelBreakdown";
+
+const ALL_LEVELS = "all";
+const EMPTY_LEVEL_STAT = { present: 0, incomplete: 0, absent: 0, total: 0, rate: 0 };
 
 const COLORS = { present: "#059669", incomplete: "#d97706", absent: "#dc2626" };
 const SERIES: { key: "Present" | "Incomplete" | "Absent"; color: string }[] = [
@@ -65,17 +68,42 @@ function ChartTooltip({
 }
 
 export default function SubjectReportView({ report }: { report: SubjectReport }) {
-  const trendData = report.lectureStats.map((l) => ({
-    date: formatDate(l.startTime),
-    rate: l.rate,
+  // "A level is selected and analysis is shown" — every stat tile, both
+  // charts, the roster table, and the CSV export below all key off this one
+  // piece of state. "all" (the default, unchanged from before this filter
+  // existed) keeps today's combined view; picking a specific level narrows
+  // every one of those to just that level's students, using the backend's
+  // per-level breakdown (LectureStat.byLevel — see routes/reports.js) for
+  // the charts and a plain filter of studentStats for everything else.
+  const [selectedLevel, setSelectedLevel] = useState<string>(ALL_LEVELS);
+
+  // Only offer levels that actually have at least one student on this
+  // subject's roster — never an always-empty option.
+  const availableLevels = groupByLevel(report.studentStats).map((g) => ({
+    key: levelKey(g.level),
+    label: g.label,
+    count: g.items.length,
   }));
 
-  const breakdownData = report.lectureStats.map((l) => ({
+  const filteredStudents =
+    selectedLevel === ALL_LEVELS
+      ? report.studentStats
+      : report.studentStats.filter((s) => levelKey(s.level) === selectedLevel);
+
+  const trendData = report.lectureStats.map((l) => ({
     date: formatDate(l.startTime),
-    Present: l.present,
-    Incomplete: l.incomplete,
-    Absent: l.absent,
+    rate: selectedLevel === ALL_LEVELS ? l.rate : (l.byLevel[selectedLevel] ?? EMPTY_LEVEL_STAT).rate,
   }));
+
+  const breakdownData = report.lectureStats.map((l) => {
+    const stat = selectedLevel === ALL_LEVELS ? l : (l.byLevel[selectedLevel] ?? EMPTY_LEVEL_STAT);
+    return {
+      date: formatDate(l.startTime),
+      Present: stat.present,
+      Incomplete: stat.incomplete,
+      Absent: stat.absent,
+    };
+  });
 
   // Click a legend entry to toggle that series off/on in the stacked bar —
   // the bar itself is only omitted from the JSX (not just visually hidden),
@@ -90,24 +118,49 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
     });
   }
 
-  const atRisk = report.studentStats.filter((s) => s.rate < AT_RISK_THRESHOLD && s.totalLectures > 0);
-
-  // A subject/teacher can have students across several levels at once (a
-  // combined class) — group the roster table by level rather than listing
-  // everyone flat, with each group's own attendance subtotal.
-  const levelGroups = groupByLevel(report.studentStats);
   function groupRate(students: StudentStat[]) {
     const present = students.reduce((sum, s) => sum + s.present, 0);
     const slots = students.reduce((sum, s) => sum + s.totalLectures, 0);
     return slots > 0 ? Math.round((present / slots) * 1000) / 10 : 0;
   }
 
+  const atRisk = filteredStudents.filter((s) => s.rate < AT_RISK_THRESHOLD && s.totalLectures > 0);
+  const overallRate = selectedLevel === ALL_LEVELS ? report.overallRate : groupRate(filteredStudents);
+
+  // A subject/teacher can have students across several levels at once (a
+  // combined class) — group the roster table by level rather than listing
+  // everyone flat, with each group's own attendance subtotal. When a
+  // specific level is selected this naturally collapses to one group.
+  const levelGroups = groupByLevel(filteredStudents);
+
   return (
     <div className="space-y-6">
+      <Card className="p-4 flex flex-wrap items-center gap-3">
+        <label htmlFor="level-filter" className="text-sm font-medium text-slate-700">
+          Level
+        </label>
+        <select
+          id="level-filter"
+          value={selectedLevel}
+          onChange={(e) => setSelectedLevel(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white text-sm px-3 py-1.5"
+        >
+          <option value={ALL_LEVELS}>All levels ({report.studentStats.length})</option>
+          {availableLevels.map((l) => (
+            <option key={l.key} value={l.key}>
+              {l.label} ({l.count})
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-slate-400">
+          Every stat, chart, and export below reflects the selected level.
+        </span>
+      </Card>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatTile label="Overall attendance" value={`${report.overallRate}%`} />
+        <StatTile label="Overall attendance" value={`${overallRate}%`} />
         <StatTile label="Lectures held" value={report.totalLecturesHeld} />
-        <StatTile label="Students on roster" value={report.rosterSize} />
+        <StatTile label="Students on roster" value={filteredStudents.length} />
         <StatTile label="At-risk students" value={atRisk.length} hint={`< ${AT_RISK_THRESHOLD}% attendance`} />
       </div>
 
@@ -209,8 +262,12 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-slate-900">Students</h3>
           <a
-            href={`data:text/csv;charset=utf-8,${encodeURIComponent(toCsv(report))}`}
-            download={`${report.subjectName.replace(/\s+/g, "_")}_attendance.csv`}
+            href={`data:text/csv;charset=utf-8,${encodeURIComponent(toCsv(filteredStudents))}`}
+            download={`${report.subjectName.replace(/\s+/g, "_")}_attendance_${
+              selectedLevel === ALL_LEVELS
+                ? "all_levels"
+                : levelLabel(parseLevelKey(selectedLevel)).replace(/\s+/g, "_")
+            }.csv`}
             className="text-sm text-blue-700 font-medium"
           >
             Export CSV
@@ -263,9 +320,13 @@ export default function SubjectReportView({ report }: { report: SubjectReport })
   );
 }
 
-function toCsv(report: SubjectReport): string {
+// Takes the already level-filtered student list — see the "Export CSV" link
+// above, which is the only caller — so the downloaded file always matches
+// exactly what's on screen (and in the level <select>) at the time it's
+// clicked, per "CSV must also be exported according to levels."
+function toCsv(students: StudentStat[]): string {
   const header = ["Student", "Index Number", "Level", "Present", "Incomplete", "Absent", "Total Lectures", "Rate (%)"];
-  const rows = report.studentStats.map((s) => [
+  const rows = students.map((s) => [
     s.name,
     s.indexNumber ?? "",
     s.level ?? "",

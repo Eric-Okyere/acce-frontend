@@ -8,6 +8,19 @@ export function levelLabel(level: number | null): string {
   return level == null ? "Level not set" : `Level ${level}`;
 }
 
+// Mirrors backend/src/routes/reports.js's levelKey() — the string key a
+// level maps to inside a LectureStat's byLevel object ("100".."400", or
+// "null" for never-set). Also doubles as the <select>/URL-param value for
+// the level filter (SubjectReportView.tsx, the admin dashboard) — "all" is
+// reserved there for "every level combined" and is never a real levelKey.
+export function levelKey(level: number | null): string {
+  return level == null ? "null" : String(level);
+}
+
+export function parseLevelKey(key: string): number | null {
+  return key === "null" ? null : Number(key);
+}
+
 export interface LevelCount {
   level: number | null;
   label: string;

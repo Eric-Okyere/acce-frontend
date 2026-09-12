@@ -3,8 +3,13 @@ import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { Card, PageHeader, StatTile } from "@/components/ui";
 import LevelBreakdownTable from "@/components/LevelBreakdownTable";
+import { levelLabel, parseLevelKey } from "@/lib/levels";
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ level?: string }>;
+}) {
   const { token } = await requireSessionWithToken(["ADMIN"]);
   const [programs, subjects, teachers, reps, students, halls, recentAudit] = await Promise.all([
     api.listPrograms(token),
@@ -24,6 +29,27 @@ export default async function AdminDashboardPage() {
   // accounts. The Course reps tile stays alongside it as its own breakdown.
   const totalStudents = students.length + reps.length;
 
+  // "A level is selected and analysis is shown" — driven by ?level= on this
+  // same page (a plain link/query-param filter, matching how
+  // admin/reports.tsx already picks a subject) rather than client-side
+  // state, since this stays a server component. undefined = "All levels"
+  // (today's whole-school view, unchanged); otherwise every level-scoped
+  // number below narrows to just that level.
+  const { level: levelParam } = await searchParams;
+  const selectedLevel = levelParam === undefined ? undefined : parseLevelKey(levelParam);
+  const filtering = selectedLevel !== undefined;
+
+  const subjectsAtLevel = filtering ? subjects.filter((s) => s.level === selectedLevel) : subjects;
+  const studentsAtLevel = filtering ? students.filter((s) => s.level === selectedLevel) : students;
+  const repsAtLevel = filtering ? reps.filter((r) => r.level === selectedLevel) : reps;
+  const totalStudentsAtLevel = studentsAtLevel.length + repsAtLevel.length;
+  // A teacher can teach several levels at once (different subjects, or one
+  // combined class) — "Teachers" when filtered means "teaches at least one
+  // subject at this level," not a partition, so a teacher covering two
+  // levels rightly counts under both filters.
+  const teacherIdsAtLevel = new Set(subjectsAtLevel.map((s) => s.teacher_id).filter((id): id is string => !!id));
+  const teachersAtLevel = filtering ? teachers.filter((t) => teacherIdsAtLevel.has(t.id)) : teachers;
+
   return (
     <div>
       <PageHeader
@@ -32,28 +58,32 @@ export default async function AdminDashboardPage() {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <StatTile label="Programs" value={programs.length} />
-        <StatTile label="Subjects" value={subjects.length} />
-        <StatTile label="Teachers" value={teachers.length} />
-        <StatTile label="Course reps" value={reps.length} />
-        <StatTile label="Students" value={totalStudents} hint="Includes course reps" />
-        <StatTile label="Lecture halls" value={halls.length} />
+        <StatTile label="Programs" value={programs.length} hint={filtering ? "School-wide" : undefined} />
+        <StatTile label="Subjects" value={subjectsAtLevel.length} />
+        <StatTile label="Teachers" value={teachersAtLevel.length} />
+        <StatTile label="Course reps" value={repsAtLevel.length} />
+        <StatTile label="Students" value={totalStudentsAtLevel} hint="Includes course reps" />
+        <StatTile label="Lecture halls" value={halls.length} hint={filtering ? "School-wide" : undefined} />
       </div>
 
       {/* Every level is its own distinct cohort — nothing here lumps 100
-          through 400 into one combined number. Programs, Teachers, and
-          Lecture halls stay out of this table on purpose: none of them is a
-          level-scoped concept (a program spans every level, a teacher can
-          teach several levels at once — see the teacher Students page — and
-          a hall is just a physical room), so a "by level" split of those
-          would just repeat the same total in every row. */}
+          through 400 into one combined number. Programs and Lecture halls
+          stay out of this table on purpose: neither is a level-scoped
+          concept (a program spans every level, a hall is just a physical
+          room), so a "by level" split of those would just repeat the same
+          total in every row. Click a row (or "All levels") to filter the
+          whole page — see the comment on `selectedLevel` above. */}
       <Card className="p-5 mb-8">
-        <h2 className="font-semibold text-slate-900 mb-1">By level</h2>
+        <h2 className="font-semibold text-slate-900 mb-1">
+          By level{filtering ? ` — ${levelLabel(selectedLevel!)}` : ""}
+        </h2>
         <p className="text-xs text-slate-400 mb-3">
           Every level-scoped headcount on this dashboard, broken out — a course rep counts as both a
-          course rep and a student, same as the totals above.
+          course rep and a student, same as the totals above. Click a level to filter the page.
         </p>
         <LevelBreakdownTable
+          linkBase="/admin"
+          selectedLevel={selectedLevel}
           columns={[
             { key: "subjects", label: "Subjects", items: subjects },
             { key: "students", label: "Students", items: [...students, ...reps] },
@@ -64,7 +94,12 @@ export default async function AdminDashboardPage() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="p-5">
-          <h2 className="font-semibold text-slate-900 mb-3">Quick setup checklist</h2>
+          <h2 className="font-semibold text-slate-900 mb-3">
+            Quick setup checklist{filtering ? " (school-wide)" : ""}
+          </h2>
+          {/* Onboarding progress is about the whole school's setup, not one
+              level at a time, so this stays unfiltered even when a level is
+              selected above — the label just says so explicitly. */}
           <ol className="space-y-2 text-sm">
             <ChecklistItem
               done={programs.length > 0}

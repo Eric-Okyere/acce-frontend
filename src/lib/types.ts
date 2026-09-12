@@ -155,6 +155,15 @@ export interface ScanCandidate {
   checkedOut: boolean;
 }
 
+// Keyed by level.toString() ("100".."400"), or "null" for never-set — see
+// routes/reports.js's levelKey(). Lets the level filter on
+// SubjectReportView.tsx redraw both charts for just one level without a
+// second request.
+export type LectureStatByLevel = Record<
+  string,
+  { present: number; incomplete: number; absent: number; total: number; rate: number }
+>;
+
 export interface LectureStat {
   lectureId: string;
   title: string | null;
@@ -166,6 +175,7 @@ export interface LectureStat {
   absent: number;
   total: number;
   rate: number;
+  byLevel: LectureStatByLevel;
 }
 
 export interface StudentStat {
