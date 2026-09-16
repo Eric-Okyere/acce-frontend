@@ -5,6 +5,13 @@ import { ApiError } from "@/lib/api";
 import PrintButton from "./PrintButton";
 import LinkpiiAd from "@/components/LinkpiiAd";
 
+// Eric is testing the app right now and asked to show only the QR codes on
+// this poster for the time being — flip this back to true (or wire it up
+// to something more elaborate, like a per-deploy env var) whenever he says
+// to bring the Linkpii ad back. LinkpiiAd itself is untouched, just not
+// rendered while this is false.
+const SHOW_LINKPII_AD = false;
+
 export default async function HallPrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { token } = await requireSessionWithToken(["ADMIN"]);
   const { id } = await params;
@@ -28,9 +35,11 @@ export default async function HallPrintPage({ params }: { params: Promise<{ id: 
         This QR code is unique to this hall and cryptographically signed — copies or edited images
         will be rejected by the system.
       </p>
-      <div className="mt-8">
-        <LinkpiiAd />
-      </div>
+      {SHOW_LINKPII_AD && (
+        <div className="mt-8">
+          <LinkpiiAd />
+        </div>
+      )}
       <div className="mt-8">
         <PrintButton />
       </div>
