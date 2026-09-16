@@ -5,6 +5,7 @@ import { createHallAction, toggleHallActiveAction } from "@/app/actions/admin";
 import { ActionForm } from "@/components/ActionForm";
 import { Card, PageHeader, inputClass, Badge, secondaryButtonClass } from "@/components/ui";
 import HallLocationFields from "./HallLocationFields";
+import EditHallLocationForm from "./EditHallLocationForm";
 
 export default async function HallsPage() {
   const { token } = await requireSessionWithToken(["ADMIN"]);
@@ -48,7 +49,7 @@ export default async function HallsPage() {
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qr} alt={`QR code for ${hall.name}`} className="w-full max-w-[180px] mx-auto my-3" />
-              <div className="flex gap-2">
+              <div className="flex gap-2 mb-2">
                 <Link
                   href={`/admin/halls/${hall.id}/print`}
                   className={`${secondaryButtonClass} flex-1 !py-1.5 text-xs`}
@@ -61,6 +62,12 @@ export default async function HallsPage() {
                   </button>
                 </form>
               </div>
+              <EditHallLocationForm
+                hallId={hall.id}
+                latitude={hall.latitude}
+                longitude={hall.longitude}
+                radiusMeters={hall.radius_meters}
+              />
             </Card>
           ))}
           {halls.length === 0 && <p className="text-sm text-slate-500">No lecture halls yet.</p>}

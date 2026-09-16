@@ -276,7 +276,14 @@ export function getLectureRoster(token: string, lectureId: string) {
 }
 export function createLecture(
   token: string,
-  input: { subjectId: string; lectureHallId: string; title?: string; startTime: string; endTime: string }
+  input: {
+    subjectId: string;
+    lectureHallId: string;
+    title?: string;
+    level?: number | null;
+    startTime: string;
+    endTime: string;
+  }
 ) {
   return request<LectureRow>("/lectures", { method: "POST", token, body: input });
 }

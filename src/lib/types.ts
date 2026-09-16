@@ -93,6 +93,13 @@ export interface LectureRow {
   lecture_hall_id: string;
   course_rep_id: string;
   title: string | null;
+  // Which level this specific lecture session is for — 100 through 400, or
+  // null (unset — every level offering the course). Distinct from
+  // SubjectRow.level: a course can be combined across several levels at
+  // once, and this tags one individual session as being for just one of
+  // them. A COURSE_REP's lectures always take their own level, set
+  // server-side (see routes/lectures.js); TEACHER/ADMIN pick freely.
+  level: number | null;
   start_time: string;
   end_time: string;
   checkout_grace_minutes: number;

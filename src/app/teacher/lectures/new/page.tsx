@@ -3,6 +3,7 @@ import * as api from "@/lib/api";
 import { createLectureAction } from "@/app/actions/lectures";
 import { ActionForm } from "@/components/ActionForm";
 import { Card, PageHeader, inputClass } from "@/components/ui";
+import { STUDENT_LEVELS } from "@/lib/levels";
 
 // A teacher can schedule a lecture for their own subject(s) — same
 // capability a course rep has, extended to teachers (and, separately,
@@ -66,6 +67,20 @@ export default async function NewTeacherLecturePage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Title (optional)</label>
                 <input name="title" className={inputClass} placeholder="e.g. Chapter 4 — Fractions" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Level (optional)</label>
+                <select name="level" defaultValue="" className={inputClass}>
+                  <option value="">All levels</option>
+                  {STUDENT_LEVELS.map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-400 mt-1">
+                  Only needed if this course is combined across levels and this session is for just one of them.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

@@ -299,9 +299,9 @@ export async function updateHallLocationAction(_prev: FormState, fd: FormData): 
       radiusMeters: Number.isFinite(radius) && radius > 0 ? radius : undefined,
     });
     revalidatePath("/admin/halls");
-    return { success: "Hall location updated. Its QR code has been re-signed — reprint and replace the old one." };
+    return { success: "Geofence radius updated — takes effect right away on the existing printed QR code." };
   } catch (e) {
-    return { error: e instanceof ApiError ? e.message : "Enter a valid latitude/longitude." };
+    return { error: e instanceof ApiError ? e.message : "Could not update the radius." };
   }
 }
 

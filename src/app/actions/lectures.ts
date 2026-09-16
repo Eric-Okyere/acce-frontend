@@ -24,6 +24,7 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
   const subjectId = str(fd, "subjectId");
   const lectureHallId = str(fd, "lectureHallId");
   const title = str(fd, "title");
+  const levelRaw = str(fd, "level");
   const startTime = str(fd, "startTime");
   const endTime = str(fd, "endTime");
 
@@ -38,12 +39,21 @@ export async function createLectureAction(_prev: FormState, fd: FormData): Promi
   if (end.getTime() <= start.getTime()) {
     return { error: "End time must be after the start time." };
   }
+  // Empty means "no level chosen" (TEACHER/ADMIN left it unset, or a
+  // COURSE_REP whose form doesn't render the field at all) — the backend
+  // enforces the real per-role rule (COURSE_REP always gets their own
+  // level regardless of what's sent), this is just what gets sent.
+  const level = levelRaw ? Number(levelRaw) : null;
+  if (levelRaw && ![100, 200, 300, 400].includes(level as number)) {
+    return { error: "Level must be 100, 200, 300, or 400." };
+  }
 
   try {
     await api.createLecture(token, {
       subjectId,
       lectureHallId,
       title: title || undefined,
+      level,
       startTime: start.toISOString(),
       endTime: end.toISOString(),
     });

@@ -41,7 +41,9 @@ export default async function RepLectureDetailPage({ params }: { params: Promise
         title={subject?.name ?? "Lecture"}
         subtitle={`${hall?.name ?? "Unknown hall"} · ${new Date(lecture.start_time).toLocaleString()} – ${new Date(
           lecture.end_time
-        ).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
+        ).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}${
+          lecture.level ? ` · Level ${lecture.level}` : ""
+        }`}
         action={
           phase !== "ENDED" && phase !== "CANCELLED" ? (
             <LectureActionButtons lectureId={id} endable={phase === "ONGOING"} cancellable size="full" />

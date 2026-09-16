@@ -3,6 +3,7 @@ import * as api from "@/lib/api";
 import { createLectureAction } from "@/app/actions/lectures";
 import { ActionForm } from "@/components/ActionForm";
 import { Card, PageHeader, inputClass } from "@/components/ui";
+import { levelLabel } from "@/lib/levels";
 
 export default async function NewLecturePage() {
   const { token } = await requireSessionWithToken(["COURSE_REP"]);
@@ -70,6 +71,13 @@ export default async function NewLecturePage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Title (optional)</label>
                 <input name="title" className={inputClass} placeholder="e.g. Chapter 4 — Fractions" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Level</label>
+                <p className={`${inputClass} bg-slate-50 text-slate-700`}>{levelLabel(rep.level)}</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Lectures you schedule are always for your own level — an admin sets this on your account.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

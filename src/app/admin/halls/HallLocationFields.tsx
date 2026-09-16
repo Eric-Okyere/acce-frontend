@@ -81,14 +81,14 @@ export default function HallLocationFields({
         <input
           name="radiusMeters"
           type="number"
-          min={10}
-          max={500}
+          min={1}
           defaultValue={defaultRadius}
           className={inputClass}
         />
         <p className="text-xs text-slate-400 mt-1">
           How close a student&apos;s phone GPS must be to this hall to check in. 80m is a reasonable
-          default for GPS accuracy indoors.
+          default for GPS accuracy indoors — set it to whatever fits this hall (a smaller value is
+          stricter, a larger one is more forgiving of weak GPS signal).
         </p>
       </div>
     </div>

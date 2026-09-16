@@ -52,7 +52,10 @@ export default async function TeacherLecturesPage() {
             <Card key={lec.id} className="p-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <h3 className="font-medium text-slate-900">{subject?.name ?? "Unknown course"}</h3>
+                  <h3 className="font-medium text-slate-900">
+                    {subject?.name ?? "Unknown course"}
+                    {lec.level && <span className="ml-2 text-xs font-normal text-slate-400">Level {lec.level}</span>}
+                  </h3>
                   <p className="text-sm text-slate-500">
                     {hall?.name ?? "Unknown hall"} ·{" "}
                     {new Date(lec.start_time).toLocaleString(undefined, {
