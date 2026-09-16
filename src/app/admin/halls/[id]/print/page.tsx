@@ -3,6 +3,7 @@ import { requireSessionWithToken } from "@/lib/guard";
 import * as api from "@/lib/api";
 import { ApiError } from "@/lib/api";
 import PrintButton from "./PrintButton";
+import LinkpiiAd from "@/components/LinkpiiAd";
 
 export default async function HallPrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { token } = await requireSessionWithToken(["ADMIN"]);
@@ -27,6 +28,9 @@ export default async function HallPrintPage({ params }: { params: Promise<{ id: 
         This QR code is unique to this hall and cryptographically signed — copies or edited images
         will be rejected by the system.
       </p>
+      <div className="mt-8">
+        <LinkpiiAd />
+      </div>
       <div className="mt-8">
         <PrintButton />
       </div>
